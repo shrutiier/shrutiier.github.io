@@ -5,7 +5,7 @@ import { ThemeProvider } from "../contexts/ThemeContext";
 import { getImagePath } from "@/utils/getImagePath";
 
 export const metadata: Metadata = {
-  title: "shrutiiyer's website",
+  title: "shrutiier",
   description: "Shruti Iyer's Portfolio",
   icons: {
     icon: getImagePath("/favicon-new.ico"),
