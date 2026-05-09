@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build && cp -r public/* out/ || true",
+    "build": "next build",
     "export": "next export",
     "start": "next start",
     "lint": "eslint",

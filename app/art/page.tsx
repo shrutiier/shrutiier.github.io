@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Footer from "@/components/Footer";
+import { getImagePath } from "@/utils/getImagePath";
 
 export default function Art() {
   return (
@@ -15,7 +16,7 @@ export default function Art() {
       <div className="py-6 -mx-[8%] xl:-mx-[24%]">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 px-4 md:px-6 lg:px-8 relative z-10">
           <Image
-            src="/Mother Teresa.jpg"
+            src={getImagePath("/artworks/mother-teresa.jpg")}
             alt="Artwork"
             width={800}
             height={1000}
@@ -23,7 +24,7 @@ export default function Art() {
             className="rounded-md w-full h-auto object-cover"
           />
           <Image
-            src="/God of Death.jpg"
+            src={getImagePath("/artworks/god-of-death.jpg")}
             alt="Artwork"
             width={800}
             height={1000}
@@ -31,7 +32,7 @@ export default function Art() {
             className="rounded-md w-full h-auto object-cover"
           />
           <Image
-            src="/Pearl Earring Girl.jpg"
+            src={getImagePath("/artworks/pearl-earring-girl.jpg")}
             alt="Artwork"
             width={800}
             height={1000}
