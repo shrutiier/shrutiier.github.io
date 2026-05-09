@@ -5,7 +5,7 @@ export default function Footer() {
     <footer className="py-10 w-full flex flex-col md:flex-row items-center justify-between text-muted-foreground text-xs">
       {/* Left side: copyright */}
       <div className="order-2 md:order-1 mt-4 md:mt-0 text-center md:text-left">
-        <p>© 2025 Shruti Iyer. Designed and built by me.</p>
+        <p>© 2026</p>
       </div>
 
       {/* Right side: social links */}

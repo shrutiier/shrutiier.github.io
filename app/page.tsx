@@ -19,8 +19,7 @@ export default function Home() {
             className="text-muted-foreground text-[16px] max-w-2xl"
             style={{ fontFamily: "Helvetica Neue, Helvetica, Arial, sans-serif" }}
           >
-            A running log of what I&apos;ve been doing, <br />
-            and what&apos;s in my head.
+            A running log of what I&apos;ve been doing.
           </p>
         </section>
 

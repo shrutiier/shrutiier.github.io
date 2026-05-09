@@ -6,21 +6,6 @@ import { getImagePath } from "@/utils/getImagePath";
 export default function ProjectPage()  {
   return (
     <main className="flex flex-col min-h-screen w-full">
-      {/* Hero Image Section */}
-      <section className="w-full mt-16 flex justify-center">
-        <div className="w-full max-w-[1800px]">
-          <a href="https://www.nicmaronline.com/" target="_blank" rel="noopener noreferrer">
-            <Image
-              src={getImagePath("/projects/nicmar/nicmar-banner.jpg")}
-              alt="NICMAR Online Project"
-              width={1820}
-              height={500}
-              className="w-full h-auto object-cover rounded-none sm:rounded-[12px]"
-            />
-          </a>
-        </div>
-      </section>
-
       {/* Main Content Container */}
       <div className="flex-1 flex flex-col w-full px-0 sm:px-[8%] xl:px-[24%]">
         <div className="flex flex-col px-6 sm:px-10 pt-16">
