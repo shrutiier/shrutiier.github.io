@@ -19,7 +19,7 @@ export default function ProjectPage()  {
           {/* Intro Section */}
           <section className="mb-12 w-full">
             <h1 className="text-2xl md:text-3xl font-semibold text-foreground mb-6">
-              Accessible NICMAR Online
+              NICMAR Online
             </h1>
             <p className="text-muted-foreground leading-relaxed">
               In a world rapidly moving online, one of India&apos;s most profound AEC institutions,

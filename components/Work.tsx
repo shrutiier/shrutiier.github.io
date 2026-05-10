@@ -3,7 +3,7 @@ import Link from "next/link";
 export default function Work() {
   const projects = [
     {
-      title: "Accessible NICMAR Online",
+      title: "NICMAR Online",
       description: "Designed NICMAR Online’s digital presence",
       role: "UX Designer",
       year: 2025,

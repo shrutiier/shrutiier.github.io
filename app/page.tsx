@@ -9,12 +9,20 @@ export default function Home() {
       <div className="flex flex-col w-full px-0 sm:px-[8%] xl:px-[24%]">
         {/* Header Section */}
         <section className="flex flex-col py-12 px-6 sm:px-12 pt-32">
-          <h1
-            className="text-[24px] md:text-[24px] mb-2 leading-none text-foreground"
-            style={{ fontFamily: "IBM Plex Serif", fontWeight: 400 }}
-          >
-            Shruti
-          </h1>
+          <div className="mb-2 flex items-baseline gap-2">
+            <h1
+              className="text-[30px] md:text-[30px] leading-none"
+              style={{ fontFamily: "IBM Plex Serif", fontWeight: 700, color: "#90992E" }}
+            >
+              shruti
+            </h1>
+            <span
+              className="text-[16px]"
+              style={{ fontFamily: "Helvetica Neue, Helvetica, Arial, sans-serif", color: "#90992E" }}
+            >
+              /shroo-tea/
+            </span>
+          </div>
           <p
             className="text-muted-foreground text-[16px] max-w-2xl"
             style={{ fontFamily: "Helvetica Neue, Helvetica, Arial, sans-serif" }}
