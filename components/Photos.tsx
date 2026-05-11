@@ -32,9 +32,9 @@ export default function Art() {
             <Image
               src={getImagePath("/artworks/mother-teresa.jpg")}
               alt="Artwork"
-              width={820}
-              height={1020}
-              className="w-full h-auto object-cover transition-transform duration-300 ease-out will-change-transform group-hover:scale-[1.8]"
+              width={1299}
+              height={1920}
+              className="block w-[calc(100%+3px)] max-w-none h-auto object-cover transition-transform duration-300 ease-out will-change-transform group-hover:scale-[1.8]"
               style={{ transformOrigin: "var(--x,50%) var(--y,50%)" }}
             />
           </div>
@@ -55,9 +55,9 @@ export default function Art() {
             <Image
               src={getImagePath("/artworks/god-of-death.jpg")}
               alt="Artwork"
-              width={820}
-              height={1020}
-              className="w-full h-auto object-cover transition-transform duration-300 ease-out will-change-transform group-hover:scale-[1.8]"
+              width={1299}
+              height={1920}
+              className="block w-[calc(100%+3px)] max-w-none h-auto object-cover transition-transform duration-300 ease-out will-change-transform group-hover:scale-[1.8]"
               style={{ transformOrigin: "var(--x,50%) var(--y,50%)" }}
             />
           </div>
@@ -78,9 +78,9 @@ export default function Art() {
             <Image
               src={getImagePath("/artworks/pearl-earring-girl.jpg")}
               alt="Artwork"
-              width={820}
-              height={1020}
-              className="w-full h-auto object-cover transition-transform duration-300 ease-out will-change-transform group-hover:scale-[1.8]"
+              width={1299}
+              height={1920}
+              className="block w-[calc(100%+3px)] max-w-none h-auto object-cover transition-transform duration-300 ease-out will-change-transform group-hover:scale-[1.8]"
               style={{ transformOrigin: "var(--x,50%) var(--y,50%)" }}
             />
           </div>

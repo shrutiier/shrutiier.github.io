@@ -3,15 +3,22 @@ import Link from "next/link";
 export default function Work() {
   const projects = [
     {
+      title: "NOEDRA Design system",
+      description: "Design system for energy operation platforms",
+      role: "UX Designer",
+      year: 2026,
+      href: "/projects/siemens-energy-design-system",
+    },
+    {
       title: "NICMAR Online",
-      description: "Designed NICMAR Online’s digital presence",
+      description: "Accessible platform for NICMAR Online",
       role: "UX Designer",
       year: 2025,
       href: "/projects/nicmar",
     },
     {
       title: "Smarter Records with Tymli",
-      description: "Simplified health records for doctors & patients",
+      description: "Health records for doctors and patients",
       role: "UX Designer",
       year: 2025,
       href: "/projects/tymli-health",

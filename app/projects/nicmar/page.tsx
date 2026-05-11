@@ -8,7 +8,7 @@ export default function ProjectPage()  {
     <main className="flex flex-col min-h-screen w-full">
       {/* Main Content Container */}
       <div className="flex-1 flex flex-col w-full px-0 sm:px-[8%] xl:px-[24%]">
-        <div className="flex flex-col px-6 sm:px-10 pt-16">
+        <div className="flex flex-col px-6 sm:px-10 pt-32">
           {/* Meta Info */}
           <section className="mb-2 w-full">
             <p className="uppercase tracking-widest text-sm text-muted-foreground font-mono">
@@ -48,13 +48,13 @@ export default function ProjectPage()  {
 
         {/* Secondary Image */}
         <section className="mt-6 w-full flex justify-center">
-          <div className="w-full sm:-mx-[8%] xl:-mx-[24%]">
+          <div className="w-full sm:-mx-[8%] xl:-mx-[24%] overflow-hidden rounded-none sm:rounded-[12px]">
             <Image
-              src={getImagePath("/projects/nicmar/nicmar-accessibility.png")}
+              src={getImagePath("/projects/nicmar/nicmar-accessibility.jpg")}
               alt="Accessibility Overview"
-              width={1820}
-              height={1020}
-              className="w-full h-auto object-cover rounded-none sm:rounded-[12px]"
+              width={1920}
+              height={925}
+              className="block w-full h-auto object-cover -mb-[2px]"
             />
           </div>
         </section>
