@@ -1,8 +1,6 @@
 "use client";
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { getImagePath } from "@/utils/getImagePath";
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -13,14 +11,16 @@ export default function Navbar() {
   };
   return (
     <nav
-      className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-8 py-4 font-normal text-sm text-muted-foreground"
+      className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4 font-normal text-sm text-muted-foreground"
       style={{ background: "linear-gradient(to bottom, #0A0A0A, transparent)" }}
     >
       {/* Left side (Logo + Links) */}
       <div className="flex items-center justify-between gap-[4px] space-x-2">
+        {/*
         <Link href="/">
           <Image src={getImagePath("/header-logo.png")} alt="My logo" width={18} height={18} />
         </Link>
+        */}
 
         <Link href="/" className={getNavItemClass("/")}>
           Work

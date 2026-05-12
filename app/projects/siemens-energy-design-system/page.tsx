@@ -18,9 +18,10 @@ export default function ProjectPage() {
               NOEDRA Design system
             </h1>
             <p className="text-muted-foreground leading-relaxed">
-              Built a design system for Siemens Energy&apos;s digital grid products ecosystem - NOEDRA.
-              The project focused on creating a shared foundation for dashboards, monitoring
-              systems and operational interfaces used across multiple DG projects.
+              Collaborated in building a design system for Siemens Energy&apos;s digital grid products
+              ecosystem - NOEDRA. The project focused on creating a shared foundation for
+              dashboards, monitoring systems and operational interfaces used across multiple DG
+              projects.
             </p>
           </section>
 
