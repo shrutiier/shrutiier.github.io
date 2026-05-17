@@ -1,4 +1,6 @@
+import Image from "next/image";
 import Footer from "@/components/Footer";
+import { getImagePath } from "@/utils/getImagePath";
 
 export default function TymliHealthPage() {
   return (
@@ -30,7 +32,29 @@ export default function TymliHealthPage() {
               experiences, along with Tymli Health&apos;s visual identity, branding, and logo design to
               create a connected ecosystem.
             </p>
-            <br />
+
+            <div className="my-8 space-y-6">
+              <div className="w-full overflow-hidden rounded-none sm:rounded-[12px]">
+                <Image
+                  src={getImagePath("/projects/tymli-health/tymli-health-1.jpg")}
+                  alt="Tymli Health patient and doctor experience screens"
+                  width={1920}
+                  height={2330}
+                  className="block w-full h-auto object-cover"
+                />
+              </div>
+
+              <div className="w-full overflow-hidden rounded-none sm:rounded-[12px]">
+                <Image
+                  src={getImagePath("/projects/tymli-health/tymli-health-2.jpg")}
+                  alt="Tymli Health healthcare records and app screens"
+                  width={1920}
+                  height={1605}
+                  className="block w-full h-auto object-cover"
+                />
+              </div>
+            </div>
+
             <p className="text-muted-foreground leading-relaxed">
               The final designs were developed as part of Tymli Health&apos;s MVP experience and are
               currently available on the App Store as a live healthcare product.

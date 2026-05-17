@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   title: "shrutiier",
   description: "Shruti Iyer's Portfolio",
   icons: {
-    icon: getImagePath("/favicon-new.ico"),
+    icon: getImagePath("/favicon-new.png"),
   },
 };
 

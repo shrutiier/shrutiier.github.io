@@ -81,13 +81,14 @@ export default function ProjectPage() {
             <h2 className="text-lg font-normal text-foreground/90 mb-2">2. Components:</h2>
             <ul className="list-disc pl-5 space-y-2 text-muted-foreground leading-relaxed">
               <li>
-                <span className="text-foreground">Base Components</span> - Forms, navigation,
-                tables, overlays, notifications, inputs, and data visualization patterns.
+                <span className="text-foreground">Basic Components</span> - Built reusable
+                interface foundations that supported common product workflows, interaction
+                patterns, and consistent UI behavior across the ecosystem.
               </li>
               <li>
-                <span className="text-foreground">Energy Specific Components</span> - Gauge charts,
-                monitoring widgets, substations, operational dashboards, connectors, and energy
-                analytics interfaces.
+                <span className="text-foreground">Energy Specific Components</span> - Created
+                domain-focused components that supported monitoring, operational decision-making,
+                infrastructure visibility, and energy analytics workflows.
               </li>
             </ul>
           </section>
@@ -136,10 +137,6 @@ export default function ProjectPage() {
               Published scalable Figma libraries with structured variants, naming conventions,
               variables, modes, documentation, developer-ready architecture, and components for
               large desktop, desktop, tablet, and mobile versions.
-            </p>
-            <br />
-            <p className="text-muted-foreground leading-relaxed">
-              The system included 237 components and 27,453 component inserts.
             </p>
             <br />
             <p className="text-muted-foreground leading-relaxed">
