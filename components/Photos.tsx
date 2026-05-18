@@ -14,7 +14,7 @@ export default function Art() {
 
       {/* Artwork grid - full width */}
       <div className="py-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 relative z-10 w-full">
+        <div className="grid grid-cols-3 gap-2 relative z-10 w-full">
           <div
             className="group overflow-hidden rounded-[2px]"
             onMouseMove={(e) => {
