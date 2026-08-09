@@ -11,13 +11,13 @@ export default function Home() {
         <section className="flex flex-col py-12 px-6 sm:px-12 pt-32">
           <div className="mb-2 flex items-baseline gap-2">
             <h1
-              className="text-[30px] md:text-[30px] leading-none"
+              className="text-[32px] md:text-[32px] leading-none"
               style={{ fontFamily: "IBM Plex Serif", fontWeight: 700, color: "#90992E" }}
             >
               shruti
             </h1>
             <span
-              className="text-[16px]"
+              className="text-[18px]"
               style={{ fontFamily: "Helvetica Neue, Helvetica, Arial, sans-serif", color: "#90992E" }}
             >
               /shroo-tea/
