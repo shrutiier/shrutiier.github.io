@@ -21,6 +21,8 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <ThemeProvider>
+          <div className="pointer-events-none fixed inset-y-0 left-[24%] z-10 hidden w-px bg-[#1F1F1F] xl:block" />
+          <div className="pointer-events-none fixed inset-y-0 right-[24%] z-10 hidden w-px bg-[#1F1F1F] xl:block" />
           <NavBar />
           {children}
         </ThemeProvider>
