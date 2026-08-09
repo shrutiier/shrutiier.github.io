@@ -37,10 +37,16 @@ export default function Work() {
             <div className="flex w-full justify-between items-center px-[12px] py-[8px] cursor-pointer">
               {/* Left: title and description */}
               <div className="flex flex-col items-start text-left min-w-[160px] gap-[0.5px]">
-                <span className="text-[14px] md:text-[14px] text-foreground tracking-wider">
+                 <span
+                  className="text-[14px] md:text-[14px] text-foreground tracking-wider"
+                  style={{ fontFamily: "Manrope, sans-serif" }}
+                >
                   {project.title}
                 </span>
-                <span className="text-[13px] md:text-[13px] tracking-wide font-normal text-muted-foreground">
+                 <span
+                  className="text-[13px] md:text-[13px] tracking-wide font-normal text-muted-foreground"
+                  style={{ fontFamily: "Manrope, sans-serif" }}
+                >
                   {project.description}
                 </span>
               </div>
