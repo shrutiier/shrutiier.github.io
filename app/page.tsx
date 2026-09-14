@@ -12,7 +12,7 @@ export default function Home() {
           <div className="mb-2 flex items-baseline gap-2">
             <h1
               className="text-[36px] md:text-[36px] leading-none"
-              style={{ fontFamily: "IBM Plex Serif", fontWeight: 700, color: "#90992E" }}
+              style={{ fontFamily: "var(--font-ibm-plex-serif), serif", fontWeight: 700, color: "#90992E" }}
             >
               shruti
             </h1>

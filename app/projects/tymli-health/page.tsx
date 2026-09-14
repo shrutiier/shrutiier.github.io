@@ -1,10 +1,12 @@
 import Image from "next/image";
 import Footer from "@/components/Footer";
+import RevealOnScroll from "@/components/RevealOnScroll";
 import { getImagePath } from "@/utils/getImagePath";
 
 export default function TymliHealthPage() {
   return (
     <main className="flex flex-col min-h-screen w-full">
+      <RevealOnScroll />
       <div className="flex-1 flex flex-col w-full px-0 sm:px-[8%] xl:px-[24%]">
         <div className="flex flex-1 flex-col px-6 sm:px-10 pt-32">
           <section className="mb-2 w-full">
@@ -13,7 +15,7 @@ export default function TymliHealthPage() {
             </p>
           </section>
 
-          <section className="mb-12 w-full">
+          <section className="mb-12 w-full reveal" data-reveal>
             <h1 className="text-2xl md:text-3xl font-semibold text-foreground mb-6">
               Smarter Records with Tymli
             </h1>
@@ -25,7 +27,7 @@ export default function TymliHealthPage() {
             </p>
           </section>
 
-          <section className="mb-12 w-full">
+          <section className="mb-12 w-full reveal" data-reveal>
             <h2 className="text-lg font-normal text-foreground/90 mb-2">Process</h2>
             <p className="text-muted-foreground leading-relaxed">
               I majorly collaborated in designing the end-to-end patient, doctor, and admin
@@ -34,7 +36,7 @@ export default function TymliHealthPage() {
             </p>
 
             <div className="my-8 space-y-6">
-              <div className="w-full overflow-hidden rounded-none sm:rounded-[12px]">
+              <div className="w-full overflow-hidden rounded-none sm:rounded-[12px] reveal" data-reveal>
                 <Image
                   src={getImagePath("/projects/tymli-health/tymli-health-1.jpg")}
                   alt="Tymli Health patient and doctor experience screens"
@@ -44,7 +46,7 @@ export default function TymliHealthPage() {
                 />
               </div>
 
-              <div className="w-full overflow-hidden rounded-none sm:rounded-[12px]">
+              <div className="w-full overflow-hidden rounded-none sm:rounded-[12px] reveal" data-reveal>
                 <Image
                   src={getImagePath("/projects/tymli-health/tymli-health-2.jpg")}
                   alt="Tymli Health healthcare records and app screens"

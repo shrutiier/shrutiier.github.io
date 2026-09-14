@@ -1,11 +1,12 @@
-import Image from "next/image";
 import Footer from "@/components/Footer";
+import RevealOnScroll from "@/components/RevealOnScroll";
 import { getImagePath } from "@/utils/getImagePath";
 
 
 export default function ProjectPage()  {
   return (
     <main className="flex flex-col min-h-screen w-full">
+      <RevealOnScroll />
       {/* Main Content Container */}
       <div className="flex-1 flex flex-col w-full px-0 sm:px-[8%] xl:px-[24%]">
         <div className="flex flex-col px-6 sm:px-10 pt-32">
@@ -17,7 +18,7 @@ export default function ProjectPage()  {
           </section>
 
           {/* Intro Section */}
-          <section className="mb-12 w-full">
+          <section className="mb-12 w-full reveal" data-reveal>
             <h1 className="text-2xl md:text-3xl font-semibold text-foreground mb-6">
               NICMAR Online
             </h1>
@@ -35,7 +36,7 @@ export default function ProjectPage()  {
           </section>
 
           {/* Strategy Section */}
-          <section className="mb-12 w-full">
+          <section className="mb-12 w-full reveal" data-reveal>
             <h2 className="text-lg font-normal text-foreground/90 mb-2">Strategy</h2>
             <p className="text-muted-foreground leading-relaxed">
               Studying competitors showed us that premium courses need simple discovery and strong
@@ -47,13 +48,18 @@ export default function ProjectPage()  {
         </div>
 
         {/* Secondary Image */}
-        <section className="mt-6 w-full flex justify-center">
+        <section className="mt-6 w-full flex justify-center reveal" data-reveal>
           <div className="w-full sm:-mx-[8%] xl:-mx-[24%] overflow-hidden rounded-none sm:rounded-[12px]">
-            <Image
-              src={getImagePath("/projects/nicmar/nicmar-accessibility.jpg")}
-              alt="Accessibility Overview"
+            <video
+              src={getImagePath("/projects/nicmar/nicmar-accessibility.mp4")}
+              poster={getImagePath("/projects/nicmar/nicmar-accessibility.jpg")}
+              autoPlay
+              loop
+              muted
+              playsInline
+              aria-label="Accessibility Overview"
               width={1920}
-              height={925}
+              height={924}
               className="block w-full h-auto object-cover -mb-[2px]"
             />
           </div>
@@ -61,7 +67,7 @@ export default function ProjectPage()  {
 
         {/* Accessibility Section */}
         <div className="flex flex-col px-6 sm:px-10 pt-12">
-          <section className="mb-12 w-full">
+          <section className="mb-12 w-full reveal" data-reveal>
             <h2 className="text-lg font-normal text-foreground/90 mb-2">
               Accessibility as a Non-Negotiable
             </h2>
@@ -88,7 +94,7 @@ export default function ProjectPage()  {
           </section>
 
           {/* Results Section */}
-          <section className="mb-12 w-full">
+          <section className="mb-12 w-full reveal" data-reveal>
             <h2 className="text-lg font-normal text-foreground/90 mb-2">Results</h2>
             <p className="text-muted-foreground leading-relaxed">
               Through testing and iterative refinements, we made sure to comply with WCAG 2.1 Level
