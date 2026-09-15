@@ -34,7 +34,27 @@ export default function ProjectPage()  {
               foundational UX and visual design.
             </p>
           </section>
+        </div>
 
+        {/* Hero Animation */}
+        <section className="mt-6 w-full flex justify-center reveal" data-reveal>
+          <div className="w-full sm:-mx-[8%] xl:-mx-[24%] overflow-hidden rounded-none sm:rounded-[12px]">
+            <video
+              src={getImagePath("/projects/nicmar/nicmar-hero.mp4")}
+              poster={getImagePath("/projects/nicmar/nicmar-hero.jpg")}
+              autoPlay
+              loop
+              muted
+              playsInline
+              aria-label="NICMAR Online homepage hero"
+              width={1920}
+              height={1294}
+              className="block w-full h-auto object-cover -mb-[2px]"
+            />
+          </div>
+        </section>
+
+        <div className="flex flex-col px-6 sm:px-10 pt-12">
           {/* Strategy Section */}
           <section className="mb-12 w-full reveal" data-reveal>
             <h2 className="text-lg font-normal text-foreground/90 mb-2">Strategy</h2>
