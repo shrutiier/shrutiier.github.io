@@ -122,14 +122,14 @@ export default function ProjectPage()  {
               more accessible.
             </p>
             <p className="text-muted-foreground leading-relaxed mt-3">
-              Explore the platform at{" "}
+              Explore the platform{" "}
               <a
                 href="https://www.nicmaronline.com/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="underline hover:text-foreground/60"
               >
-                www.nicmaronline.com
+                here
               </a>
               .
             </p>
