@@ -47,8 +47,9 @@ function parseTrack(payload: unknown): Track | null {
  * request leaves whatever was already showing rather than blanking the line.
  */
 export default function LastPlayed() {
-  // The fallback is only for the unconfigured case. Once Last.fm can answer, start
-  // empty and wait for it — otherwise a song she never played flashes on every load.
+  // Start empty when Last.fm can answer, so the real track is the first thing shown
+  // rather than the fallback flashing on every load. With no key there is nothing to
+  // wait for, so the fallback goes up immediately.
   const [track, setTrack] = useState<Track | null>(
     !configured && FALLBACK_TRACK.title ? FALLBACK_TRACK : null
   );
@@ -61,14 +62,29 @@ export default function LastPlayed() {
       `${ENDPOINT}?method=user.getrecenttracks&user=${encodeURIComponent(LASTFM_USER)}` +
       `&api_key=${encodeURIComponent(LASTFM_API_KEY)}&format=json&limit=1`;
 
+    // If Last.fm never answers there is nothing to show, so drop back to the
+    // configured track rather than leaving an empty gap in the footer. Only ever
+    // applied when nothing real has arrived — a later failed poll must not
+    // replace a track we already have.
+    const showFallback = () => {
+      if (!FALLBACK_TRACK.title) return;
+      setTrack((current) => current ?? FALLBACK_TRACK);
+    };
+
     const load = async () => {
       try {
         const response = await fetch(url, { signal: controller.signal });
-        if (!response.ok) return;
+        if (!response.ok) {
+          showFallback();
+          return;
+        }
         const live = parseTrack(await response.json());
         if (live) setTrack(live);
+        else showFallback();
       } catch {
-        // Offline, blocked, or aborted on unmount — leave whatever was showing.
+        // Offline, blocked, or aborted on unmount. An abort means the component is
+        // going away, so there is nothing worth showing; anything else falls back.
+        if (!controller.signal.aborted) showFallback();
       }
     };
 

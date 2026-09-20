@@ -15,15 +15,16 @@ export const LASTFM_API_KEY = process.env.NEXT_PUBLIC_LASTFM_API_KEY ?? "";
 /**
  * Shown until Last.fm answers — and permanently, if no API key is configured.
  *
- * Without this the footer line simply wouldn't exist until the Last.fm setup is
- * done, which is confusing. CHANGE THIS to a song you'd actually want a visitor
- * to see, because until the API key is set this is what the site tells everyone
- * you last listened to. Set `title` to an empty string to hide the line instead.
+ * With the API key configured this is only reached when Last.fm cannot be
+ * reached at all — the service down, a blocked network, an ad-blocker — so it
+ * should be a track worth sitting there indefinitely rather than anything
+ * topical. Set `title` to an empty string to hide the line in that case instead.
  */
 export const FALLBACK_TRACK = {
-  title: "Cinnamon Girl",
-  artist: "Lana Del Rey",
-  url: "https://www.last.fm/music/Lana+Del+Rey/_/Cinnamon+Girl",
+  title: "annie.",
+  artist: "wave to earth",
+  // The trailing dot is part of the track name, so it belongs in the URL too.
+  url: "https://www.last.fm/music/wave+to+earth/_/annie.",
 };
 
 /**
