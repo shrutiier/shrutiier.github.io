@@ -22,7 +22,10 @@ export const metadata: Metadata = {
   title: "shrutiier",
   description: "Shruti Iyer's Portfolio",
   icons: {
-    icon: getImagePath("/favicon-new.png"),
+    // The ?v= is a cache-buster. Browsers hold onto favicons far longer than
+    // ordinary assets, so without it a colour change can go unseen for days.
+    // Bump this number whenever the icon artwork changes.
+    icon: `${getImagePath("/favicon-new.png")}?v=5`,
   },
 };
 

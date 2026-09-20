@@ -7,6 +7,11 @@
   --foreground: #F9F5F3;
   --muted-foreground: #747372;
   --border: #24272C;
+
+  /* Accent — the single source of truth for the site's highlight colour.
+     Change these two values and every accented element follows. */
+  --accent: #6EA91A;
+  --accent-deep: #335404;
 }
 
 /* Tailwind color theme bindings */
@@ -16,6 +21,8 @@
   --color-foreground: var(--foreground);
   --color-muted-foreground: var(--muted-foreground);
   --color-border: var(--border);
+  --color-accent: var(--accent);
+  --color-accent-deep: var(--accent-deep);
 }
 
 html {
@@ -52,6 +59,7 @@ body {
 
 /* Text selection — olive accent, matching the homepage header and rule lines. */
 ::selection {
-  background-color: #90992E;
-  color: #090909;
+  background-color: var(--accent);
+  color: var(--background);
 }
+

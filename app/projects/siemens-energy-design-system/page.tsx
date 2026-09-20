@@ -47,7 +47,7 @@ export default function ProjectPage() {
             <h2 className="text-lg font-medium text-foreground mb-6">Before the Build</h2>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="border-l-2 border-[#4E5307] pl-3">
+              <div className="border-l-2 border-accent-deep pl-3">
                 <h3 className="font-medium text-foreground mb-2">Starting point</h3>
                 <p className="text-muted-foreground leading-relaxed">
                   NOEDRA grew from a proven visual language created for one product, so the next step
@@ -55,7 +55,7 @@ export default function ProjectPage() {
                 </p>
               </div>
 
-              <div className="border-l-2 border-[#4E5307] pl-3">
+              <div className="border-l-2 border-accent-deep pl-3">
                 <h3 className="font-medium text-foreground mb-2">What we explored</h3>
                 <p className="text-muted-foreground leading-relaxed">
                   We reviewed existing products to understand patterns, workflows,
@@ -63,7 +63,7 @@ export default function ProjectPage() {
                 </p>
               </div>
 
-              <div className="border-l-2 border-[#4E5307] pl-3">
+              <div className="border-l-2 border-accent-deep pl-3">
                 <h3 className="font-medium text-foreground mb-2">The challenge</h3>
                 <p className="text-muted-foreground leading-relaxed">
                   Build one shared language without forcing every product into the same mould.

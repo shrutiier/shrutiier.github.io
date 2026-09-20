@@ -12,13 +12,13 @@ export default function Home() {
           <div className="mb-2 flex items-baseline gap-2">
             <h1
               className="text-[36px] md:text-[36px] leading-none"
-              style={{ fontFamily: "var(--font-ibm-plex-serif), serif", fontWeight: 700, color: "#90992E" }}
+              style={{ fontFamily: "var(--font-ibm-plex-serif), serif", fontWeight: 700, color: "var(--accent)" }}
             >
               shruti
             </h1>
             <span
               className="text-[22px]"
-              style={{ fontFamily: "Helvetica Neue, Helvetica, Arial, sans-serif", color: "#90992E" }}
+              style={{ fontFamily: "Helvetica Neue, Helvetica, Arial, sans-serif", color: "var(--accent)" }}
             >
               /shroo-tea/
             </span>
@@ -45,7 +45,7 @@ export default function Home() {
 
         {/* Footer */}
         <section className="px-6 sm:px-12 py-4">
-          <Footer />
+          <Footer showStatus />
         </section>
       </div>
     </main>
