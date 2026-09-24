@@ -22,9 +22,11 @@ export default function Navbar() {
         </Link>
         */}
 
+        {/*
         <Link href="/" className={getNavItemClass("/")}>
           Work
         </Link>
+        */}
       </div>
     </nav>
   );

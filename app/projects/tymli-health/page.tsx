@@ -1,4 +1,5 @@
 import Image from "next/image";
+import BackLink from "@/components/BackLink";
 import Footer from "@/components/Footer";
 import RevealOnScroll from "@/components/RevealOnScroll";
 import { getImagePath } from "@/utils/getImagePath";
@@ -9,6 +10,8 @@ export default function TymliHealthPage() {
       <RevealOnScroll />
       <div className="flex-1 flex flex-col w-full px-0 sm:px-[8%] xl:px-[24%]">
         <div className="flex flex-1 flex-col px-6 sm:px-10 pt-32">
+          <BackLink />
+
           <section className="mb-2 w-full">
             <p className="uppercase tracking-widest text-sm text-muted-foreground font-mono">
               FISTUDIOZ • UX Designer • 2025
