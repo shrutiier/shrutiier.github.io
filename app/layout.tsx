@@ -38,8 +38,8 @@ export default function RootLayout({
     <html lang="en" className={`${ibmPlexSerif.variable} ${manrope.variable}`}>
       <body>
         <ThemeProvider>
-          <div className="pointer-events-none fixed inset-y-0 left-[24%] z-10 hidden w-px bg-[#222121] xl:block" />
-          <div className="pointer-events-none fixed inset-y-0 right-[24%] z-10 hidden w-px bg-[#222121] xl:block" />
+          <div className="pointer-events-none page-guide fixed inset-y-0 z-10 w-px bg-[#222121]" />
+          <div className="pointer-events-none page-guide page-guide-right fixed inset-y-0 z-10 w-px bg-[#222121]" />
           <NavBar />
           {children}
         </ThemeProvider>

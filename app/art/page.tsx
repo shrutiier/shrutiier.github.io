@@ -4,7 +4,7 @@ import { getImagePath } from "@/utils/getImagePath";
 
 export default function Art() {
   return (
-    <main className="flex-1 flex flex-col px-[8%] xl:px-[24%] min-h-screen w-full">
+    <main className="flex-1 flex flex-col page-column min-h-screen">
       {/* Removed vertical divider lines */}
 
       <div className="text-md text-muted-foreground pt-32 pb-20 text-center">
@@ -13,7 +13,7 @@ export default function Art() {
       </div>
 
       {/* Artwork grid - full width */}
-      <div className="py-6 -mx-[8%] xl:-mx-[24%]">
+      <div className="py-6 page-full-bleed">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 px-4 md:px-6 lg:px-8 relative z-10">
           <Image
             src={getImagePath("/artworks/mother-teresa.jpg")}

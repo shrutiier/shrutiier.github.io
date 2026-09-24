@@ -26,7 +26,7 @@ export default function Footer({ showStatus = false }: { showStatus?: boolean })
         </div>
 
         {/* Right side: social links */}
-        <div className="order-1 flex space-x-3 font-mono text-[12px] uppercase md:order-2">
+        <div className="order-1 flex space-x-3 font-mono text-[12px] uppercase md:order-2 md:-mr-1.5">
           <Link
             href="https://www.linkedin.com/in/shrutiiyer17/"
             target="_blank"

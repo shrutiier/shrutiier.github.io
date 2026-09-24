@@ -9,8 +9,8 @@ export default function ProjectPage()  {
     <main className="flex flex-col min-h-screen w-full">
       <RevealOnScroll />
       {/* Main Content Container */}
-      <div className="flex-1 flex flex-col w-full px-0 sm:px-[8%] xl:px-[24%]">
-        <div className="flex flex-col px-6 sm:px-10 pt-32">
+      <div className="flex-1 flex flex-col page-column">
+        <div className="flex flex-col pt-32">
           {/* Meta Info */}
           <BackLink />
 
@@ -41,7 +41,7 @@ export default function ProjectPage()  {
 
         {/* Hero Animation */}
         <section className="mt-6 w-full flex justify-center reveal" data-reveal>
-          <div className="w-full sm:-mx-[8%] xl:-mx-[24%] overflow-hidden rounded-none sm:rounded-[12px]">
+          <div className="page-bleed overflow-hidden rounded-none sm:rounded-[12px]">
             <video
               src={getImagePath("/projects/nicmar/nicmar-hero.mp4")}
               poster={getImagePath("/projects/nicmar/nicmar-hero.jpg")}
@@ -57,7 +57,7 @@ export default function ProjectPage()  {
           </div>
         </section>
 
-        <div className="flex flex-col px-6 sm:px-10 pt-12">
+        <div className="flex flex-col pt-12">
           {/* Strategy Section */}
           <section className="mb-12 w-full reveal" data-reveal>
             <h2 className="text-lg font-normal text-foreground/90 mb-2">Strategy</h2>
@@ -72,7 +72,7 @@ export default function ProjectPage()  {
 
         {/* Secondary Image */}
         <section className="mt-6 w-full flex justify-center reveal" data-reveal>
-          <div className="w-full sm:-mx-[8%] xl:-mx-[24%] overflow-hidden rounded-none sm:rounded-[12px]">
+          <div className="page-bleed overflow-hidden rounded-none sm:rounded-[12px]">
             <video
               src={getImagePath("/projects/nicmar/nicmar-accessibility.mp4")}
               poster={getImagePath("/projects/nicmar/nicmar-accessibility.jpg")}
@@ -89,7 +89,7 @@ export default function ProjectPage()  {
         </section>
 
         {/* Accessibility Section */}
-        <div className="flex flex-col px-6 sm:px-10 pt-12">
+        <div className="flex flex-col pt-12">
           <section className="mb-12 w-full reveal" data-reveal>
             <h2 className="text-lg font-normal text-foreground/90 mb-2">
               Accessibility as a Non-Negotiable

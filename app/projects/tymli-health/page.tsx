@@ -8,8 +8,8 @@ export default function TymliHealthPage() {
   return (
     <main className="flex flex-col min-h-screen w-full">
       <RevealOnScroll />
-      <div className="flex-1 flex flex-col w-full px-0 sm:px-[8%] xl:px-[24%]">
-        <div className="flex flex-1 flex-col px-6 sm:px-10 pt-32">
+      <div className="flex-1 flex flex-col page-column">
+        <div className="flex flex-1 flex-col pt-32">
           <BackLink />
 
           <section className="mb-2 w-full">

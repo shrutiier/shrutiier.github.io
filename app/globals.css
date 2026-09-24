@@ -57,6 +57,70 @@ body {
   }
 }
 
+/* Content column — same sizing rules as darioamodei.com.
+   Desktop keeps a fixed 38.75rem column (580px of text) however wide the window gets;
+   below 992px it becomes 80% of the viewport, and below 480px 95%. */
+.page-column {
+  --bleed: 40px;
+  width: 100%;
+  max-width: 38.75rem;
+  margin-inline: auto;
+  padding-inline: 20px;
+}
+
+@media (max-width: 991px) {
+  .page-column {
+    width: 80%;
+    max-width: none;
+    padding-inline: 10px;
+  }
+}
+
+@media (max-width: 479px) {
+  .page-column {
+    width: 95%;
+  }
+}
+
+/* Media that extends past the text column by --bleed on each side, and runs edge to edge on phones. */
+.page-bleed {
+  flex-shrink: 0;
+  width: calc(100% + 2 * var(--bleed));
+  max-width: none;
+  margin-inline: calc(-1 * var(--bleed));
+}
+
+@media (max-width: 639px) {
+  .page-bleed {
+    width: 100vw;
+    margin-inline: calc(50% - 50vw);
+  }
+}
+
+/* Runs the full viewport width from inside the column. */
+.page-full-bleed {
+  width: 100vw;
+  max-width: none;
+  margin-inline: calc(50% - 50vw);
+}
+
+/* Vertical guide lines on the edges of the media, shown once the column is fixed-width. */
+.page-guide {
+  display: none;
+}
+
+@media (min-width: 992px) {
+  .page-guide {
+    display: block;
+    left: calc(50% - 38.75rem / 2 + 20px - 40px);
+  }
+
+  .page-guide.page-guide-right {
+    left: auto;
+    right: calc(50% - 38.75rem / 2 + 20px - 40px);
+  }
+}
+
 /* Text selection — olive accent, matching the homepage header and rule lines. */
 ::selection {
   background-color: var(--accent);

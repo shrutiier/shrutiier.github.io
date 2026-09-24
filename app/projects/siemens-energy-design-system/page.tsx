@@ -7,8 +7,8 @@ export default function ProjectPage() {
   return (
     <main className="flex flex-col min-h-screen w-full">
       <RevealOnScroll />
-      <div className="flex-1 flex flex-col w-full px-0 sm:px-[8%] xl:px-[24%]">
-        <div className="flex flex-col px-6 sm:px-10 pt-32">
+      <div className="flex-1 flex flex-col page-column">
+        <div className="flex flex-col pt-32">
           <BackLink />
 
           <section className="mb-2 w-full">
@@ -30,7 +30,7 @@ export default function ProjectPage() {
         </div>
 
         <section className="mt-6 w-full flex justify-center reveal" data-reveal>
-          <div className="w-full sm:-mx-[8%] xl:-mx-[24%] overflow-hidden rounded-none sm:rounded-[12px]">
+          <div className="page-bleed overflow-hidden rounded-none sm:rounded-[12px]">
             <video
               src={getImagePath("/projects/siemens-energy-design-system/hero.mp4")}
               autoPlay
@@ -45,7 +45,7 @@ export default function ProjectPage() {
           </div>
         </section>
 
-        <div className="flex flex-col px-6 sm:px-10 pt-12">
+        <div className="flex flex-col pt-12">
           <section className="mb-12 w-full reveal" data-reveal>
             <h2 className="text-lg font-medium text-foreground mb-6">Before the Build</h2>
 
@@ -104,7 +104,7 @@ export default function ProjectPage() {
         </div>
 
         <section className="mt-6 w-full flex justify-center reveal" data-reveal>
-          <div className="w-full sm:-mx-[8%] xl:-mx-[24%] overflow-hidden rounded-none sm:rounded-[12px]">
+          <div className="page-bleed overflow-hidden rounded-none sm:rounded-[12px]">
             <video
               src={getImagePath("/projects/siemens-energy-design-system/foundation.mp4")}
               poster={getImagePath("/projects/siemens-energy-design-system/foundation.jpg")}
@@ -120,7 +120,7 @@ export default function ProjectPage() {
           </div>
         </section>
 
-        <div className="flex flex-col px-6 sm:px-10 pt-12">
+        <div className="flex flex-col pt-12">
           <section className="mb-12 w-full xl:relative reveal" data-reveal>
             <h2 className="text-lg font-medium text-foreground mb-2">Components</h2>
             <p className="text-muted-foreground leading-relaxed mb-8">
@@ -151,7 +151,7 @@ export default function ProjectPage() {
 
         <section className="mt-6 w-full flex justify-center reveal" data-reveal>
           <div
-            className="relative w-full sm:-mx-[8%] xl:-mx-[24%] overflow-hidden rounded-none sm:rounded-[12px]"
+            className="relative page-bleed overflow-hidden rounded-none sm:rounded-[12px]"
             style={{ aspectRatio: "1920 / 937.5", backgroundColor: "var(--background)" }}
             role="img"
             aria-label="NOEDRA base and energy specific components in use"
@@ -249,7 +249,7 @@ export default function ProjectPage() {
           </div>
         </section>
 
-        <div className="flex flex-col px-6 sm:px-10 pt-12">
+        <div className="flex flex-col pt-12">
           <section className="mb-12 w-full reveal" data-reveal>
             <h2 className="text-lg font-medium text-foreground mb-2">Templates</h2>
             <p className="text-muted-foreground leading-relaxed">
@@ -261,7 +261,7 @@ export default function ProjectPage() {
         </div>
 
         <section className="mt-6 w-full flex justify-center reveal" data-reveal>
-          <div className="w-full sm:-mx-[8%] xl:-mx-[24%] overflow-hidden rounded-none sm:rounded-[12px]">
+          <div className="page-bleed overflow-hidden rounded-none sm:rounded-[12px]">
             <video
               src={getImagePath("/projects/siemens-energy-design-system/templates.mp4")}
               poster={getImagePath("/projects/siemens-energy-design-system/templates.jpg")}
@@ -277,7 +277,7 @@ export default function ProjectPage() {
           </div>
         </section>
 
-        <div className="flex flex-col px-6 sm:px-10 pt-12">
+        <div className="flex flex-col pt-12">
           <section className="mb-12 w-full reveal" data-reveal>
             <h2 className="text-lg font-medium text-foreground mb-2">
               Across the Product Ecosystem
