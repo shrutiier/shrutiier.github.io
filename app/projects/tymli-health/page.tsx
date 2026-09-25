@@ -6,10 +6,10 @@ import { getImagePath } from "@/utils/getImagePath";
 function Motion({ name, label, width, height }: { name: string; label: string; width: number; height: number }) {
   return (
     <section className="mt-6 w-full flex justify-center reveal" data-reveal>
-      <div className="w-full overflow-hidden rounded-[12px]">
+      <div className="page-bleed overflow-hidden rounded-none sm:rounded-[12px]">
         <video
-          src={getImagePath(`/projects/tymli-health/tymli-${name}.mp4`)}
-          poster={getImagePath(`/projects/tymli-health/tymli-${name}.jpg`)}
+          src={getImagePath(`/projects/tymli-health/tymli-${name}.mp4?v=2`)}
+          poster={getImagePath(`/projects/tymli-health/tymli-${name}.jpg?v=2`)}
           autoPlay
           loop
           muted
@@ -52,7 +52,7 @@ export default function TymliHealthPage() {
           </section>
         </div>
 
-        <Motion name="hero" label="Tymli Health app screens coming together" width={1440} height={1128} />
+        <Motion name="hero" label="Tymli Health app screens coming together" width={1920} height={1504} />
 
         {/* The Product */}
         <div className="flex flex-col pt-12">
@@ -78,7 +78,7 @@ export default function TymliHealthPage() {
           </section>
         </div>
 
-        <Motion name="patient" label="Tymli patient mobile app flow" width={1440} height={1200} />
+        <Motion name="patient" label="Tymli patient mobile app flow" width={1920} height={1600} />
 
         <div className="flex flex-col pt-6">
           <section className="mb-12 w-full reveal" data-reveal>
@@ -98,7 +98,7 @@ export default function TymliHealthPage() {
           </section>
         </div>
 
-        <Motion name="doctor" label="Tymli doctor web experience" width={1440} height={900} />
+        <Motion name="doctor" label="Tymli doctor web experience" width={1920} height={1200} />
 
         <div className="flex flex-col pt-6">
           <section className="mb-12 w-full reveal" data-reveal>
@@ -119,7 +119,7 @@ export default function TymliHealthPage() {
           </section>
         </div>
 
-        <Motion name="admin" label="Tymli admin and backend experience" width={1440} height={900} />
+        <Motion name="admin" label="Tymli admin and backend experience" width={1920} height={1200} />
 
         <div className="flex flex-col pt-6">
           <section className="mb-12 w-full reveal" data-reveal>
