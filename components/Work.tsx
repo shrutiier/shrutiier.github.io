@@ -4,24 +4,24 @@ export default function Work() {
   const projects = [
     {
       title: "NOEDRA Design system",
-      description: "Design system for energy operation platforms",
+      description: "Designing for energy operations",
       role: "UX Designer",
       year: 2026,
       href: "/projects/siemens-energy-design-system",
     },
     {
-      title: "NICMAR Online",
-      description: "Accessible platform for NICMAR Online",
-      role: "UX Designer",
-      year: 2025,
-      href: "/projects/nicmar",
-    },
-    {
-      title: "Smarter Records with Tymli",
-      description: "Health records for doctors and patients",
+      title: "Tymli Health",
+      description: "Smarter digital health records",
       role: "UX Designer",
       year: 2025,
       href: "/projects/tymli-health",
+    },
+    {
+      title: "NICMAR Online",
+      description: "Accessible online presence",
+      role: "UX Designer",
+      year: 2025,
+      href: "/projects/nicmar",
     },
   ];
 
