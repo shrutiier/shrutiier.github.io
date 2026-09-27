@@ -57,13 +57,17 @@ body {
   }
 }
 
-/* Content column — same sizing rules as darioamodei.com.
-   Desktop keeps a fixed 38.75rem column (580px of text) however wide the window gets;
+/* Content column — same sizing rules as darioamodei.com, slightly narrower on desktop.
+   Desktop keeps a fixed 582px column (542px of text, 620px between the guide lines) however wide the window gets;
    below 992px it becomes 80% of the viewport, and below 480px 95%. */
+:root {
+  --column-max: 582px;
+}
+
 .page-column {
   --bleed: 40px;
   width: 100%;
-  max-width: 38.75rem;
+  max-width: var(--column-max);
   margin-inline: auto;
   padding-inline: 20px;
 }
@@ -112,12 +116,12 @@ body {
 @media (min-width: 992px) {
   .page-guide {
     display: block;
-    left: calc(50% - 38.75rem / 2 + 20px - 40px);
+    left: calc(50% - var(--column-max) / 2 + 20px - 40px);
   }
 
   .page-guide.page-guide-right {
     left: auto;
-    right: calc(50% - 38.75rem / 2 + 20px - 40px);
+    right: calc(50% - var(--column-max) / 2 + 20px - 40px);
   }
 }
 

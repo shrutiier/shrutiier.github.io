@@ -33,15 +33,11 @@ export default function Home() {
           </p>
         </section>
 
-        {/* Featured Work Section */}
-        <section className="flex flex-col md:flex-row py-4 sm:-mx-2 reveal" data-reveal>
-          <div className="w-full">
+        {/* Work + Art — one container, so they sit closer than other sections */}
+        <section className="flex flex-col gap-[62px] py-4 reveal" data-reveal>
+          <div className="w-full sm:-mx-2 sm:w-[calc(100%+1rem)]">
             <Work />
           </div>
-        </section>
-
-        {/* Art Section */}
-        <section className="flex flex-col md:flex-row py-4 reveal" data-reveal>
           <Art />
         </section>
 

@@ -26,7 +26,7 @@ export default function Work() {
   ];
 
   return (
-    <section className="pt-6 pb-16 w-full">
+    <section className="pt-6 w-full">
       <div className="space-y-1">
         {projects.map((project, index) => (
           <Link

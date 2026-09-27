@@ -13,7 +13,7 @@ export default function Art() {
       </div> */}
 
       {/* Artwork grid - full width */}
-      <div className="py-6">
+      <div className="pb-6">
         <div className="grid grid-cols-3 gap-2 relative z-10 w-full">
           <div
             className="group overflow-hidden rounded-[2px]"
