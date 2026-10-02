@@ -32,8 +32,8 @@ export default function Art() {
             <Image
               src={getImagePath("/artworks/mother-teresa.jpg")}
               alt="Artwork"
-              width={1299}
-              height={1920}
+              width={1458}
+              height={2156}
               className="block w-[calc(100%+3px)] max-w-none h-auto object-cover transition-transform duration-300 ease-out will-change-transform group-hover:scale-[1.8]"
               style={{ transformOrigin: "var(--x,50%) var(--y,50%)" }}
             />
@@ -55,8 +55,8 @@ export default function Art() {
             <Image
               src={getImagePath("/artworks/god-of-death.jpg")}
               alt="Artwork"
-              width={1299}
-              height={1920}
+              width={1458}
+              height={2156}
               className="block w-[calc(100%+3px)] max-w-none h-auto object-cover transition-transform duration-300 ease-out will-change-transform group-hover:scale-[1.8]"
               style={{ transformOrigin: "var(--x,50%) var(--y,50%)" }}
             />
@@ -78,8 +78,8 @@ export default function Art() {
             <Image
               src={getImagePath("/artworks/pearl-earring-girl.jpg")}
               alt="Artwork"
-              width={1299}
-              height={1920}
+              width={1458}
+              height={2156}
               className="block w-[calc(100%+3px)] max-w-none h-auto object-cover transition-transform duration-300 ease-out will-change-transform group-hover:scale-[1.8]"
               style={{ transformOrigin: "var(--x,50%) var(--y,50%)" }}
             />
