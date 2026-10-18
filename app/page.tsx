@@ -22,13 +22,13 @@ export default function Home() {
         <section className="flex flex-col py-12 reveal" data-reveal>
           <div className="mb-2 flex items-baseline gap-2">
             <h1
-              className="text-[36px] md:text-[36px] leading-none"
+              className="text-[30px] md:text-[30px] leading-none"
               style={{ fontFamily: "var(--font-ibm-plex-serif), serif", fontWeight: 700, color: "var(--accent)" }}
             >
               shruti
             </h1>
             <span
-              className="text-[22px]"
+              className="text-[18px]"
               style={{ fontFamily: "Helvetica Neue, Helvetica, Arial, sans-serif", color: "var(--accent)" }}
             >
               /shroo-tea/
