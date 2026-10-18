@@ -1,16 +1,25 @@
 import Footer from "@/components/Footer";
 import Work from "@/components/Work";
-import Art from "@/components/Photos";
+// import Art from "@/components/Photos"; // artworks hidden for now
 import RevealOnScroll from "@/components/RevealOnScroll";
+import Pond from "@/components/Pond";
 
 export default function Home() {
   return (
     <main className="flex-1 flex flex-col w-full min-h-screen">
       <RevealOnScroll />
       {/* Centered container — has horizontal padding only on larger screens */}
-      <div className="flex flex-col page-column">
+      {/* flex-1 lets the column fill the screen, so the footer can sit at the bottom */}
+      <div className="flex flex-1 flex-col page-column">
+        {/* Pond — runs between the guide lines and fades into the page on every side */}
+        <section className="pt-20 reveal" data-reveal>
+          <div className="page-bleed">
+            <Pond />
+          </div>
+        </section>
+
         {/* Header Section */}
-        <section className="flex flex-col py-12 pt-32 reveal" data-reveal>
+        <section className="flex flex-col py-12 reveal" data-reveal>
           <div className="mb-2 flex items-baseline gap-2">
             <h1
               className="text-[36px] md:text-[36px] leading-none"
@@ -38,11 +47,11 @@ export default function Home() {
           <div className="w-full sm:-mx-2 sm:w-[calc(100%+1rem)]">
             <Work />
           </div>
-          <Art />
+          {/* <Art /> — artworks hidden for now */}
         </section>
 
-        {/* Footer */}
-        <section className="py-4 reveal" data-reveal>
+        {/* Footer — pushed to the bottom of the page, even when the content is short */}
+        <section className="mt-auto py-4 reveal" data-reveal>
           <Footer showStatus />
         </section>
       </div>

@@ -131,3 +131,25 @@ body {
   color: var(--background);
 }
 
+
+/* Pond — a green halftone koi pond at the top of the homepage, between the guide lines.
+   No frame: its dots thin out towards the edges until they disappear into the page.
+   The dots and the fade are drawn by components/Pond.tsx. */
+.pond {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 2 / 1;
+}
+
+@media (max-width: 639px) {
+  .pond {
+    aspect-ratio: 3 / 2;
+  }
+}
+
+.pond-bloom {
+  image-rendering: pixelated;
+  filter: blur(8px);
+  mix-blend-mode: screen;
+  opacity: 0.12;
+}
