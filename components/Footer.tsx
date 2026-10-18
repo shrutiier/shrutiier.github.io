@@ -41,6 +41,7 @@ export default function Footer({ showStatus = false }: { showStatus?: boolean })
           >
             Mail
           </Link>
+          {/* Behance hidden for now
           <Link
             href="https://www.behance.net/shrutiiyer17"
             target="_blank"
@@ -49,6 +50,7 @@ export default function Footer({ showStatus = false }: { showStatus?: boolean })
           >
             Behance
           </Link>
+          */}
         </div>
       </div>
     </footer>
