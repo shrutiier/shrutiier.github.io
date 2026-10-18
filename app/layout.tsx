@@ -38,8 +38,10 @@ export default function RootLayout({
     <html lang="en" className={`${ibmPlexSerif.variable} ${manrope.variable}`}>
       <body>
         <ThemeProvider>
+          {/* Vertical guide lines, hidden for now
           <div className="pointer-events-none page-guide fixed inset-y-0 z-10 w-px bg-[#222121]" />
           <div className="pointer-events-none page-guide page-guide-right fixed inset-y-0 z-10 w-px bg-[#222121]" />
+          */}
           <NavBar />
           {children}
         </ThemeProvider>

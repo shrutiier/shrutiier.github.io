@@ -32,7 +32,7 @@ export default function Work() {
           <Link
             key={index}
             href={project.href}
-            className="flex items-center justify-between bg-muted hover:bg-muted/60 transition-colors first:rounded-t-[16px] last:rounded-b-[16px] cursor-pointer"
+            className="flex items-center justify-between bg-muted/60 hover:bg-[#101010] transition-colors first:rounded-t-[14px] last:rounded-b-[14px] cursor-pointer"
           >
             <div className="flex w-full justify-between items-center px-[12px] py-[8px] cursor-pointer">
               {/* Left: title and description */}
