@@ -3,9 +3,9 @@
 /* Always dark mode */
 :root {
   --background: #090909;
-  --muted: #202020;
-  --foreground: #F9F5F3;
-  --muted-foreground: #747372;
+  --muted: #171717;
+  --foreground: #E3DDDC;
+  --muted-foreground: #6C6B6B;
   --border: #24272C;
 
   /* Accent — the single source of truth for the site's highlight colour.

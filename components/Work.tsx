@@ -32,7 +32,7 @@ export default function Work() {
           <Link
             key={index}
             href={project.href}
-            className="flex items-center justify-between bg-muted/60 hover:bg-[#101010] transition-colors first:rounded-t-[14px] last:rounded-b-[14px] cursor-pointer"
+            className="flex items-center justify-between bg-muted hover:bg-[#101010] transition-colors first:rounded-t-[14px] last:rounded-b-[14px] cursor-pointer"
           >
             <div className="flex w-full justify-between items-center px-[12px] py-[8px] cursor-pointer">
               {/* Left: title and description */}
@@ -56,7 +56,7 @@ export default function Work() {
                 <span className="text-xs uppercase text-muted-foreground tracking-wide font-mono">
                   {project.role}
                 </span>
-                <span className="text-muted-foreground/75 text-[14px] font-mono">
+                <span className="text-muted-foreground text-[14px] font-mono">
                   {project.year}
                 </span>
               </div>
