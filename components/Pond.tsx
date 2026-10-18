@@ -515,8 +515,8 @@ export default function Pond() {
       vignette = new Float32Array(W * H);
       for (let y = 0; y < H; y++) {
         for (let x = 0; x < W; x++) {
-          const ex = Math.min(1, Math.min(x, W - 1 - x) / (W * 0.28));
-          const ey = Math.min(1, Math.min(y, H - 1 - y) / (H * 0.32));
+          const ex = Math.min(1, Math.min(x, W - 1 - x) / (W * 0.22));
+          const ey = Math.min(1, Math.min(y, H - 1 - y) / (H * 0.27));
           const e = ex * ey;
           vignette[y * W + x] = e * e * (3 - 2 * e);
         }
