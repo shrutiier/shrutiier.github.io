@@ -37,20 +37,20 @@ export default function Featured() {
       <div className="space-y-4">
         {projects.map((project, index) => (
           <div key={index} className="flex items-center justify-between pb-2">
-            <p className="text-foreground font-normal tracking-wide text-sm">{project.title}</p>
+            <p className="text-foreground font-normal text-sm">{project.title}</p>
 
             {/* Right side - Tags + Year */}
             <div className="flex items-center space-x-3">
               {project.tags.map((tag, i) => (
                 <span
                   key={i}
-                  className="text-muted-foreground text-sm font-light rounded-lg px-[-2px] tracking-wide"
+                  className="text-muted-foreground text-sm font-light rounded-lg px-[-2px]"
                 >
                   {tag}
                 </span>
               ))}
               <span className="text-sm text-muted-foreground">~</span>
-              <span className="text-sm text-muted-foreground tracking-wide font-light">
+              <span className="text-sm text-muted-foreground font-light">
                 {project.year}
               </span>
             </div>

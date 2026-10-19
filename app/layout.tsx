@@ -13,6 +13,7 @@ const ibmPlexSerif = IBM_Plex_Serif({
   variable: "--font-ibm-plex-serif",
 });
 
+// The site's text face; set on body in globals.css.
 const manrope = Manrope({
   subsets: ["latin"],
   display: "swap",

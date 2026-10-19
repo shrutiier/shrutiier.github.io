@@ -33,15 +33,12 @@ export default function Home() {
               </h1>
               <span
                 className="text-[18px]"
-                style={{ fontFamily: "Helvetica Neue, Helvetica, Arial, sans-serif", color: "var(--accent)" }}
+                style={{ color: "var(--accent)" }}
               >
                 /shroo-tea/
               </span>
             </div>
-            <p
-              className="text-muted-foreground text-[16px] max-w-2xl"
-              style={{ fontFamily: "Helvetica Neue, Helvetica, Arial, sans-serif" }}
-            >
+            <p className="text-muted-foreground text-[15px] max-w-2xl">
               A running log of what I&apos;ve been doing.
             </p>
           </section>

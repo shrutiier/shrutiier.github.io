@@ -22,7 +22,7 @@ export default function Footer({ showStatus = false }: { showStatus?: boolean })
       <div className="flex flex-col items-center justify-between md:flex-row">
         {/* Left side: copyright */}
         <div className="order-2 mt-4 text-center md:order-1 md:mt-0 md:text-left">
-          <p>© 2026</p>
+          <p className="text-[13px]">© 2026</p>
         </div>
 
         {/* Right side: social links */}
@@ -31,13 +31,13 @@ export default function Footer({ showStatus = false }: { showStatus?: boolean })
             href="https://www.linkedin.com/in/shrutiiyer17/"
             target="_blank"
             rel="noreferrer"
-            className="rounded-lg px-1.5 py-1 transition hover:text-accent"
+            className="rounded-lg px-1.5 py-1 transition hover:text-accent-muted"
           >
             LinkedIn
           </Link>
           <Link
             href="mailto:shrutiiyer17@gmail.com"
-            className="rounded-lg px-1.5 py-1 transition hover:text-accent"
+            className="rounded-lg px-1.5 py-1 transition hover:text-accent-muted"
           >
             Mail
           </Link>
@@ -46,7 +46,7 @@ export default function Footer({ showStatus = false }: { showStatus?: boolean })
             href="https://www.behance.net/shrutiiyer17"
             target="_blank"
             rel="noreferrer"
-            className="rounded-lg px-1.5 py-1 transition hover:text-accent"
+            className="rounded-lg px-1.5 py-1 transition hover:text-accent-muted"
           >
             Behance
           </Link>

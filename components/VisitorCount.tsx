@@ -46,10 +46,7 @@ export default function VisitorCount() {
   if (visits === null) return null;
 
   return (
-    <p
-      className="mt-2 text-[13px] tracking-wide text-muted-foreground"
-      style={{ fontFamily: "var(--font-manrope), sans-serif" }}
-    >
+    <p className="mt-2 text-[14px] text-muted-foreground">
       visitor {visits.toLocaleString("en-US")}
     </p>
   );

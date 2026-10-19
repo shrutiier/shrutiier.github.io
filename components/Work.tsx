@@ -24,7 +24,7 @@ export default function Work() {
       href: "/projects/nicmar",
     },
     {
-      title: "Human Factors R&D",
+      title: "Human Factors Research & Design",
       description: "A clearer web presence",
       role: "UX Designer",
       year: 2024,
@@ -40,30 +40,21 @@ export default function Work() {
           <Link
             key={index}
             href={project.href}
-            className="group flex items-center justify-between border-b border-border/70 last:border-b-0 cursor-pointer"
+            className="group flex items-center justify-between border-b border-border last:border-b-0 cursor-pointer"
           >
-            <div className="flex w-full justify-between items-baseline px-2 py-[14px] cursor-pointer">
-              {/* Left: title */}
-              <div className="flex flex-col items-start text-left min-w-[160px] gap-[0.5px]">
-                <span
-                  className="text-[14px] md:text-[14px] text-foreground tracking-wider transition-colors group-hover:text-accent"
-                  style={{ fontFamily: "var(--font-manrope), sans-serif" }}
-                >
-                  {project.title}
-                </span>
-                {/* Description hidden for now
-                <span
-                  className="text-[13px] md:text-[13px] tracking-wide font-normal text-muted-foreground"
-                  style={{ fontFamily: "var(--font-manrope), sans-serif" }}
-                >
-                  {project.description}
-                </span>
-                */}
-              </div>
-
-              {/* Right: role / year, on the same line as the title (hidden on mobile) */}
-              <span className="hidden md:block shrink-0 text-right text-xs uppercase text-muted-foreground tracking-wide font-mono transition-colors group-hover:text-accent-muted">
-                {project.role} / {project.year}
+            {/* Title, then role / year trailing it on the same line: title / role / year.
+                Wraps under the title on narrow screens rather than overflowing. */}
+            <div className="flex w-full flex-wrap items-baseline gap-x-2 px-2 py-[14px] cursor-pointer">
+              <span className="text-[15px] font-medium text-foreground transition-colors group-hover:text-accent-muted">
+                {project.title}
+              </span>
+              {/* Description hidden for now
+              <span className="text-[13px] font-normal text-muted-foreground">
+                {project.description}
+              </span>
+              */}
+              <span className="text-[12px] uppercase text-muted-foreground tracking-wide font-mono transition-colors group-hover:text-accent-muted">
+                / {project.role} / {project.year}
               </span>
             </div>
           </Link>

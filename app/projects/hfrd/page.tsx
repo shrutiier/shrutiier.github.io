@@ -21,7 +21,7 @@ export default function ProjectPage() {
           {/* Intro Section */}
           <section className="mb-12 w-full reveal" data-reveal>
             <h1 className="text-2xl md:text-3xl font-semibold text-foreground mb-6">
-              Human Factors R&amp;D
+              Human Factors Research &amp; Design
             </h1>
             {/* Placeholder until the case study is written */}
             <p className="text-muted-foreground leading-relaxed">In progress</p>
