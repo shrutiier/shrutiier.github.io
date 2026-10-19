@@ -9,7 +9,7 @@ import VisitorCount from "./VisitorCount";
  */
 export default function Footer({ showStatus = false }: { showStatus?: boolean }) {
   return (
-    <footer className="w-full py-10 text-xs text-muted-foreground">
+    <footer className="w-full pt-10 pb-20 text-xs text-muted-foreground">
       {/* Last track scrobbled to Last.fm, then a running visit tally underneath it —
           stacked and left-aligned, the same arrangement as the reference site. */}
       {showStatus && (
