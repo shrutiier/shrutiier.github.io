@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import NavBar from "../components/NavBar";
+import SmoothScroll from "../components/SmoothScroll";
 import { ThemeProvider } from "../contexts/ThemeContext";
 import { IBM_Plex_Serif, Manrope } from "next/font/google";
 import { getImagePath } from "@/utils/getImagePath";
@@ -37,6 +38,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${ibmPlexSerif.variable} ${manrope.variable}`}>
       <body>
+        <SmoothScroll />
         <ThemeProvider>
           {/* Vertical guide lines, hidden for now
           <div className="pointer-events-none page-guide fixed inset-y-0 z-10 w-px bg-[#222121]" />
