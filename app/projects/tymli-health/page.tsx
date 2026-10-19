@@ -35,7 +35,7 @@ export default function TymliHealthPage() {
           {/* Meta Info */}
           <section className="mb-2 w-full">
             <p className="uppercase tracking-widest text-sm text-muted-foreground font-mono">
-              FISTUDIOZ • UX Designer • 2025
+              FISTUDIOZ / UX Designer / 2025
             </p>
           </section>
 

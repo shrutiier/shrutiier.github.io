@@ -23,43 +23,48 @@ export default function Work() {
       year: 2025,
       href: "/projects/nicmar",
     },
+    {
+      title: "Human Factors R&D",
+      description: "A clearer web presence",
+      role: "UX Designer",
+      year: 2024,
+      href: "/projects/hfrd",
+    },
   ];
 
   return (
-    <section className="pt-6 w-full">
-      <div className="space-y-1">
+    <section className="w-full">
+      {/* A plain list split by hairlines between the rows only. */}
+      <div>
         {projects.map((project, index) => (
           <Link
             key={index}
             href={project.href}
-            className="flex items-center justify-between bg-muted hover:bg-[#101010] transition-colors first:rounded-t-[14px] last:rounded-b-[14px] cursor-pointer"
+            className="group flex items-center justify-between border-b border-border/70 last:border-b-0 cursor-pointer"
           >
-            <div className="flex w-full justify-between items-center px-[12px] py-[8px] cursor-pointer">
-              {/* Left: title and description */}
+            <div className="flex w-full justify-between items-baseline px-2 py-[14px] cursor-pointer">
+              {/* Left: title */}
               <div className="flex flex-col items-start text-left min-w-[160px] gap-[0.5px]">
-                 <span
-                  className="text-[14px] md:text-[14px] text-foreground tracking-wider"
+                <span
+                  className="text-[14px] md:text-[14px] text-foreground tracking-wider transition-colors group-hover:text-accent"
                   style={{ fontFamily: "var(--font-manrope), sans-serif" }}
                 >
                   {project.title}
                 </span>
-                 <span
+                {/* Description hidden for now
+                <span
                   className="text-[13px] md:text-[13px] tracking-wide font-normal text-muted-foreground"
                   style={{ fontFamily: "var(--font-manrope), sans-serif" }}
                 >
                   {project.description}
                 </span>
+                */}
               </div>
 
-              {/* Right: role and year (hidden on mobile) */}
-              <div className="hidden md:flex flex-col items-end text-right min-w-[160px] gap-[2px]">
-                <span className="text-xs uppercase text-muted-foreground tracking-wide font-mono">
-                  {project.role}
-                </span>
-                <span className="text-muted-foreground text-[14px] font-mono">
-                  {project.year}
-                </span>
-              </div>
+              {/* Right: role / year, on the same line as the title (hidden on mobile) */}
+              <span className="hidden md:block shrink-0 text-right text-xs uppercase text-muted-foreground tracking-wide font-mono transition-colors group-hover:text-accent-muted">
+                {project.role} / {project.year}
+              </span>
             </div>
           </Link>
         ))}

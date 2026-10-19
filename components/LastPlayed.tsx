@@ -109,12 +109,12 @@ export default function LastPlayed() {
       rel="noreferrer"
       title={full}
       aria-label={`last played: ${full}`}
-      className="group inline-flex items-center gap-2 text-[13px] tracking-wide text-[#6B894A] hover:text-accent transition-colors max-w-full"
+      className="group inline-flex items-center gap-2 text-[13px] tracking-wide text-accent-muted hover:text-accent transition-colors max-w-full"
       style={{ fontFamily: "var(--font-manrope), sans-serif" }}
     >
       {/* Pinned to the resting tint so the note holds steady while the text
           lifts to the accent on hover. */}
-      <Music className="w-3.5 h-3.5 shrink-0 text-[#6B894A]" aria-hidden="true" />
+      <Music className="w-3.5 h-3.5 shrink-0 text-accent-muted" aria-hidden="true" />
       <span className="truncate">last played · {track.title}</span>
     </a>
   );

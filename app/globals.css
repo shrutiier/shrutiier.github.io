@@ -9,9 +9,10 @@
   --border: #24272C;
 
   /* Accent — the single source of truth for the site's highlight colour.
-     Change these two values and every accented element follows. */
+     Change these values and every accented element follows. */
   --accent: #6EA91A;
   --accent-deep: #335404;
+  --accent-muted: #6B894A; /* softer green for secondary text: last played, hovered tags */
 }
 
 /* Tailwind color theme bindings */
@@ -23,6 +24,7 @@
   --color-border: var(--border);
   --color-accent: var(--accent);
   --color-accent-deep: var(--accent-deep);
+  --color-accent-muted: var(--accent-muted);
 }
 
 html {
@@ -58,10 +60,10 @@ body {
 }
 
 /* Content column — same sizing rules as darioamodei.com, slightly narrower on desktop.
-   Desktop keeps a fixed 582px column (542px of text, 620px between the guide lines) however wide the window gets;
+   Desktop keeps a fixed 565px column (525px of text, 605px between the guide lines) however wide the window gets;
    below 992px it becomes 80% of the viewport, and below 480px 95%. */
 :root {
-  --column-max: 582px;
+  --column-max: 565px;
 }
 
 .page-column {
@@ -127,8 +129,9 @@ body {
 
 /* Text selection — olive accent, matching the homepage header and rule lines. */
 ::selection {
-  background-color: var(--accent);
-  color: var(--background);
+  /* A see-through accent wash, so selected text keeps its own colour. */
+  background-color: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: inherit;
 }
 
 
@@ -138,7 +141,7 @@ body {
 .pond {
   position: relative;
   width: 100%;
-  aspect-ratio: 2 / 1;
+  aspect-ratio: 16 / 9;
 }
 
 @media (max-width: 639px) {
