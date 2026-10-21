@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 
 /**
  * A koi pond on a green halftone screen. The water is a height-field wave simulation that
- * refracts everything beneath it: a mottled floor, drifting caustic light, reeds and the koi.
+ * refracts everything beneath it: a mottled floor, drifting caustic light, rocks and the koi.
  * Lotus pads and leaves float on top. The scene is worked out as brightness at a coarse grid,
  * ordered-dithered to a few greens, and every cell is shown as a square pixel.
  * Fish are snapped to that grid and redrawn in steps, so they move like pixel sprites.
@@ -14,12 +14,16 @@ import { useEffect, useRef } from "react";
  */
 
 const STEP = 1000 / 60; // fixed simulation step, so waves travel at the same speed on any display
-const SPRITE_STEP = 1000 / 14; // fish, reeds and leaves redraw at this rate, like sprite animation
+const SPRITE_STEP = 1000 / 14; // fish, pads and leaves redraw at this rate, like sprite animation
 const DAMPING = 0.985;
 const REFRACTION = 2;
 const SPECULAR = 0.08;
 const SEGMENTS = 16;
-const LEVELS = 6;
+const LEVELS = 13;
+const CELL = 3; // CSS pixels per cell
+// The scene was laid out on 4px cells. Sizes and counts measured in cells are scaled by K,
+// so the pixels can shrink without moving or resizing anything in the pond.
+const K = 4 / CELL;
 
 // 4×4 Bayer matrix: ordered dithering, as on early monochrome displays.
 const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5].map((v) => (v + 0.5) / 16);
@@ -70,11 +74,12 @@ type Fish = {
   patches: Patch[];
 };
 
-type Blade = { x: number; y: number; angle: number; length: number; bend: number; width: number; lum: number; seed: number };
+// A rock on the pond floor: a lumpy outline (radius per angle step), squashed a little.
+type Rock = { x: number; y: number; r: number; squash: number; angle: number; lumps: number[]; lum: number };
 
 type Leaf = { x: number; y: number; vx: number; vy: number; angle: number; spin: number; size: number; lum: number };
 
-type Pad = { x: number; y: number; vx: number; vy: number; angle: number; spin: number; r: number; lum: number; flower: boolean; glow: number };
+type Pad = { x: number; y: number; vx: number; vy: number; angle: number; spin: number; r: number; lum: number; flower: boolean; glow: number; fixed?: boolean; bare?: boolean };
 
 // Dark speckles along each koi's back, placed along the body (0 = nose, 1 = tail) and across it.
 function speckles(rand: () => number): Patch[] {
@@ -114,74 +119,96 @@ function grey(l: number, a = 1) {
   return `rgba(${v},${v},${v},${a})`;
 }
 
-/** The pond floor: dark and softly mottled. */
+/**
+ * The pond floor: dark and softly mottled, shelving down from the top bank, with a couple of
+ * broad deep pools so the water reads as having depth.
+ */
 function buildFloor(W: number, H: number) {
   const floor = new Float32Array(W * H);
   for (let y = 0; y < H; y++) {
     for (let x = 0; x < W; x++) {
+      const fx = x / K;
+      const fy = y / K;
+      const u = x / W;
+      const v = y / H;
+      const pool = 0.5 + 0.5 * Math.sin(u * 5.2 + 0.8) * Math.cos(v * 3.4 - 0.5);
       floor[y * W + x] =
-        0.27 +
-        Math.sin(x * 0.037 + 1.3) * Math.cos(y * 0.051) * 0.035 +
-        Math.sin((x - y * 0.6) * 0.019) * 0.03;
+        0.29 -
+        v * 0.11 -
+        pool * 0.1 +
+        Math.sin(fx * 0.037 + 1.3) * Math.cos(fy * 0.051) * 0.035 +
+        Math.sin((fx - fy * 0.6) * 0.019) * 0.03;
     }
   }
   return floor;
 }
 
-/** Reed clusters leaning in from the edges. */
-function buildReeds(W: number, H: number) {
+/**
+ * Rocks on the pond floor, grouped towards the corners so the middle stays open water.
+ * x is a fraction of the width, y and r of the height.
+ */
+function buildRocks(W: number, H: number) {
   const rand = mulberry32(5);
-  const clusters = [
-    { x: 0.17, y: 0.94, angle: -0.85, n: 11, len: 0.36 },
-    { x: 0.83, y: 0.94, angle: -2.3, n: 11, len: 0.36 },
-    { x: 0.4, y: 0.1, angle: 1.4, n: 5, len: 0.3 },
-    { x: 0.1, y: 0.55, angle: -0.4, n: 3, len: 0.18 },
+  const spots = [
+    { x: 0.72, y: 0.72, r: 0.1 },
+    { x: 0.805, y: 0.8, r: 0.06 },
+    { x: 0.65, y: 0.62, r: 0.045 },
+    { x: 0.87, y: 0.72, r: 0.085 },
+    { x: 0.3, y: 0.86, r: 0.045 },
+    { x: 0.5, y: 0.15, r: 0.055 },
   ];
-  const blades: Blade[] = [];
-  for (const c of clusters) {
-    for (let i = 0; i < c.n; i++) {
-      blades.push({
-        x: c.x * W + (rand() - 0.5) * 12,
-        y: c.y * H + (rand() - 0.5) * 6,
-        angle: c.angle + (rand() - 0.5) * 0.9,
-        length: c.len * H * (0.55 + rand() * 0.6),
-        bend: (rand() - 0.5) * 0.8,
-        width: 1.4 + rand() * 1.6,
-        lum: 0.55 + rand() * 0.3,
-        seed: rand() * 10,
-      });
-    }
-  }
-  return blades;
+  return spots.map(
+    (s): Rock => ({
+      x: s.x * W,
+      y: s.y * H,
+      r: s.r * H,
+      squash: 0.7 + rand() * 0.15,
+      angle: (rand() - 0.5) * 0.6,
+      lumps: Array.from({ length: 9 }, () => 0.82 + rand() * 0.22),
+      lum: 0.44 + rand() * 0.06,
+    }),
+  );
 }
 
-function drawReeds(ctx: CanvasRenderingContext2D, blades: Blade[], t: number) {
-  for (const b of blades) {
-    const sway = Math.sin(t * 0.6 + b.seed) * 0.06;
-    const a = b.angle + sway;
-    const tipA = a + b.bend + sway * 2;
-    const mx = b.x + Math.cos(a) * b.length * 0.55;
-    const my = b.y + Math.sin(a) * b.length * 0.55;
-    const tx = mx + Math.cos(tipA) * b.length * 0.45;
-    const ty = my + Math.sin(tipA) * b.length * 0.45;
-    const px = Math.cos(a + Math.PI / 2) * b.width;
-    const py = Math.sin(a + Math.PI / 2) * b.width;
+/** Rounded, lumpy stones lit from the top left: dark underside, body, a soft highlight. */
+function drawRocks(ctx: CanvasRenderingContext2D, rocks: Rock[]) {
+  for (const k of rocks) {
+    const n = k.lumps.length;
+    const pts = k.lumps.map((m, i) => {
+      const a = (i / n) * Math.PI * 2;
+      const px = Math.cos(a) * k.r * m;
+      const py = Math.sin(a) * k.r * m * k.squash;
+      return {
+        x: k.x + px * Math.cos(k.angle) - py * Math.sin(k.angle),
+        y: k.y + px * Math.sin(k.angle) + py * Math.cos(k.angle),
+      };
+    });
+    const outline = new Path2D();
+    const mid = (p: Point, q: Point) => ({ x: (p.x + q.x) / 2, y: (p.y + q.y) / 2 });
+    const m0 = mid(pts[n - 1], pts[0]);
+    outline.moveTo(m0.x, m0.y);
+    for (let i = 0; i < n; i++) {
+      const m = mid(pts[i], pts[(i + 1) % n]);
+      outline.quadraticCurveTo(pts[i].x, pts[i].y, m.x, m.y);
+    }
+    ctx.fillStyle = grey(k.lum * 0.6);
+    ctx.fill(outline);
+    ctx.save();
+    ctx.clip(outline);
+    ctx.fillStyle = grey(k.lum);
     ctx.beginPath();
-    ctx.moveTo(b.x + px, b.y + py);
-    ctx.quadraticCurveTo(mx + px * 0.7, my + py * 0.7, tx, ty);
-    ctx.quadraticCurveTo(mx - px * 0.7, my - py * 0.7, b.x - px, b.y - py);
-    ctx.closePath();
-    // Dark blade, light edges.
-    ctx.fillStyle = grey(0.06);
+    ctx.ellipse(k.x - k.r * 0.14, k.y - k.r * 0.16 * k.squash, k.r * 0.9, k.r * 0.85 * k.squash, k.angle, 0, Math.PI * 2);
     ctx.fill();
-    ctx.strokeStyle = grey(b.lum);
-    ctx.lineWidth = 1;
-    ctx.stroke();
+    ctx.fillStyle = grey(k.lum + 0.11);
+    ctx.beginPath();
+    ctx.ellipse(k.x - k.r * 0.38, k.y - k.r * 0.4 * k.squash, k.r * 0.38, k.r * 0.3 * k.squash, k.angle, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
   }
 }
 
 function makeLeaves(W: number, H: number, rand: () => number): Leaf[] {
-  return Array.from({ length: Math.max(5, Math.round(W / 34)) }, () => ({
+  return Array.from({ length: Math.max(5, Math.round(W / K / 34)) }, () => ({
     x: rand() * W,
     y: rand() * H,
     vx: 0,
@@ -209,11 +236,11 @@ function drawLeaf(ctx: CanvasRenderingContext2D, l: Leaf) {
   ctx.fill();
 }
 
-/** Two lotus beds: clusters of round pads, a couple of them flowering. */
+/** Two lotus beds, a few anchored flowers, and smaller pads and leaves round the edges. */
 function makePads(W: number, H: number, rand: () => number): Pad[] {
   const pads: Pad[] = [];
-  // glow scales the bed's brightness; the lower-right bed sits quieter so it doesn't pull the eye.
-  for (const bed of [{ x: 0.78, y: 0.36, n: 3, glow: 1 }, { x: 0.72, y: 0.74, n: 2, glow: 0.6 }]) {
+  // glow scales the bed's brightness; the lower-left bed sits quieter so it doesn't pull the eye.
+  for (const bed of [{ x: 0.78, y: 0.36, n: 3, glow: 1 }, { x: 0.16, y: 0.74, n: 2, glow: 0.6 }]) {
     for (let i = 0; i < bed.n; i++) {
       const r = H * (0.075 + rand() * 0.04);
       pads.push({
@@ -230,32 +257,77 @@ function makePads(W: number, H: number, rand: () => number): Pad[] {
       });
     }
   }
+  // The lower-left bed is just its flowering pad, sitting where the leftmost of the two was.
+  // Both are still generated above so the random stream, and everything after it, stays put.
+  const [flowering, plain] = pads.splice(-2);
+  if (plain.x < flowering.x) {
+    flowering.x = plain.x;
+    flowering.y = plain.y;
+  }
+  pads.push(flowering);
+  // Three anchored flowers in the top left, no pads, fading out with the screen's edge.
+  // Their own random stream, so the beds above don't move.
+  const frand = mulberry32(11);
+  for (const [ox, oy, size] of [[0, 0, 1], [0.09, 0.07, 0.8], [-0.055, 0.11, 0.7]]) {
+    pads.push({
+      x: 0.13 * W + ox * H,
+      y: 0.18 * H + oy * H,
+      vx: 0,
+      vy: 0,
+      angle: frand() * Math.PI * 2,
+      spin: 0,
+      r: H * 0.085 * size,
+      lum: 0.46 + frand() * 0.06,
+      flower: true,
+      glow: 0.72, // a step below the koi, so the fish stay the brightest thing in the pond
+      fixed: true,
+      bare: true,
+    });
+  }
+
+  // Scattered round leaves, a few lily pads and small flowers, filling the edges around the
+  // rocks so each side carries some weight and the middle stays open for the fish.
+  // x is a fraction of the width, y and r of the height. Own random stream again.
+  const drand = mulberry32(23);
+  // soft dims the small pieces along the top and bottom, so they sit back behind the corners.
+  const add = (x: number, y: number, r: number, kind: "leaf" | "pad" | "flower", soft = false) =>
+    pads.push({
+      x: x * W,
+      y: y * H,
+      vx: 0,
+      vy: 0,
+      angle: drand() * Math.PI * 2,
+      spin: kind === "flower" ? 0 : (drand() - 0.5) * 0.001,
+      r: r * H,
+      lum: (kind === "leaf" ? 0.5 + drand() * 0.1 : 0.46 + drand() * 0.08) * (soft ? 0.75 : 1),
+      flower: kind === "flower",
+      glow: 0.62 * (soft ? 0.75 : 1),
+      fixed: kind === "flower",
+      bare: kind === "flower",
+    });
+  for (const c of [
+    { x: 0.11, y: 0.44, n: 5, soft: false },
+    { x: 0.34, y: 0.76, n: 3, soft: true },
+    { x: 0.63, y: 0.16, n: 3, soft: true },
+    { x: 0.91, y: 0.56, n: 3, soft: false },
+  ]) {
+    for (let i = 0; i < c.n; i++) {
+      add(c.x + (drand() - 0.5) * 0.08, c.y + (drand() - 0.5) * 0.14, 0.022 + drand() * 0.016, "leaf", c.soft);
+    }
+  }
+  add(0.37, 0.12, 0.06, "pad", true);
+  add(0.32, 0.2, 0.042, "pad", true);
+  add(0.55, 0.84, 0.055, "pad", true);
+  add(0.41, 0.18, 0.045, "flower", true);
+  add(0.3, 0.7, 0.04, "flower");
+  add(0.14, 0.52, 0.035, "flower");
   return pads;
 }
 
 function drawPad(ctx: CanvasRenderingContext2D, p: Pad) {
   const x = Math.round(p.x);
   const y = Math.round(p.y);
-  // The pad: a disc with a wedge cut to the centre.
-  ctx.fillStyle = grey(p.lum);
-  ctx.beginPath();
-  ctx.moveTo(x, y);
-  ctx.arc(x, y, p.r, p.angle + 0.22, p.angle + Math.PI * 2 - 0.22);
-  ctx.closePath();
-  ctx.fill();
-  ctx.strokeStyle = grey(p.lum * 0.45); // dark rim, so pads read against the water
-  ctx.lineWidth = 1.2;
-  ctx.stroke();
-  // Veins.
-  ctx.strokeStyle = grey(p.lum * 0.6);
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  for (let k = 1; k < 6; k++) {
-    const a = p.angle + (k / 6) * Math.PI * 2;
-    ctx.moveTo(x, y);
-    ctx.lineTo(x + Math.cos(a) * p.r * 0.85, y + Math.sin(a) * p.r * 0.85);
-  }
-  ctx.stroke();
+  if (!p.bare) drawPadDisc(ctx, p, x, y);
   if (!p.flower) return;
   // A lotus flower: pointed petals round a bright centre.
   const fr = p.r * 0.6;
@@ -272,41 +344,54 @@ function drawPad(ctx: CanvasRenderingContext2D, p: Pad) {
   ctx.fill();
 }
 
+function drawPadDisc(ctx: CanvasRenderingContext2D, p: Pad, x: number, y: number) {
+  // Too small for a notch and veins to read: a plain round leaf with a dark rim.
+  if (p.r < 5 * K) {
+    ctx.fillStyle = grey(p.lum);
+    ctx.beginPath();
+    ctx.arc(x, y, p.r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = grey(p.lum * 0.45);
+    ctx.lineWidth = K;
+    ctx.stroke();
+    return;
+  }
+  // The pad: a disc with a wedge cut to the centre.
+  ctx.fillStyle = grey(p.lum);
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.arc(x, y, p.r, p.angle + 0.22, p.angle + Math.PI * 2 - 0.22);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = grey(p.lum * 0.45); // dark rim, so pads read against the water
+  ctx.lineWidth = 1.2 * K;
+  ctx.stroke();
+  // Veins.
+  ctx.strokeStyle = grey(p.lum * 0.6);
+  ctx.lineWidth = K;
+  ctx.beginPath();
+  for (let k = 1; k < 6; k++) {
+    const a = p.angle + (k / 6) * Math.PI * 2;
+    ctx.moveTo(x, y);
+    ctx.lineTo(x + Math.cos(a) * p.r * 0.85, y + Math.sin(a) * p.r * 0.85);
+  }
+  ctx.stroke();
+}
+
 /**
- * One pixel per brightness level, S×S device pixels: a solid square with a thin dark gap
- * around it, like the cells of an old monochrome screen. Brightness shows only as colour.
+ * One pixel per brightness level, S×S device pixels: a solid square filling the whole
+ * cell, so neighbouring cells butt up with no gap. Brightness shows only as colour.
  * Level 0 is a switched-off cell: plain page background.
  */
 function buildSprites(S: number) {
   return PALETTE.map((col, k) => {
-    const sprite = new Uint32Array(S * S);
-    if (k === 0) return sprite.fill(((255 << 24) | (BACKGROUND[2] << 16) | (BACKGROUND[1] << 8) | BACKGROUND[0]) >>> 0);
-    const gapCol = col.map((c, i) => BACKGROUND[i] + (c - BACKGROUND[i]) * 0.12);
-    const half = S * 0.4;
-    const SS = 4;
-    for (let py = 0; py < S; py++) {
-      for (let px = 0; px < S; px++) {
-        let cover = 0;
-        for (let sy = 0; sy < SS; sy++) {
-          for (let sx = 0; sx < SS; sx++) {
-            const dx = Math.abs(px + (sx + 0.5) / SS - S / 2);
-            const dy = Math.abs(py + (sy + 0.5) / SS - S / 2);
-            if (dx <= half && dy <= half) cover++;
-          }
-        }
-        cover /= SS * SS;
-        const r = Math.round(gapCol[0] + (col[0] - gapCol[0]) * cover);
-        const g = Math.round(gapCol[1] + (col[1] - gapCol[1]) * cover);
-        const b = Math.round(gapCol[2] + (col[2] - gapCol[2]) * cover);
-        sprite[py * S + px] = ((255 << 24) | (b << 16) | (g << 8) | r) >>> 0;
-      }
-    }
-    return sprite;
+    const c = k === 0 ? BACKGROUND : col;
+    return new Uint32Array(S * S).fill(((255 << 24) | (c[2] << 16) | (c[1] << 8) | c[0]) >>> 0);
   });
 }
 
 function makeFish(W: number, H: number, rand: () => number): Fish {
-  const length = H * (0.34 + rand() * 0.06);
+  const length = H * (0.37 + rand() * 0.065);
   const heading = rand() * Math.PI * 2;
   const x = W * (0.2 + rand() * 0.6);
   const y = H * (0.3 + rand() * 0.4);
@@ -348,7 +433,7 @@ function drawFish(ctx: CanvasRenderingContext2D, f: Fish) {
   // Tail: two flowing lobes.
   const tail = s[n - 1];
   const ta = dirAt(n - 1) + Math.PI;
-  const swing = Math.sin(f.phase * 1.2) * 0.45;
+  const swing = Math.sin(f.phase * 1.2) * 0.32;
   const tl = f.length * 0.34;
   const at = (a: number, r: number) => [tail.x + Math.cos(ta + a) * tl * r, tail.y + Math.sin(ta + a) * tl * r] as const;
   ctx.fillStyle = grey(0.95, 0.8);
@@ -423,6 +508,48 @@ function drawFish(ctx: CanvasRenderingContext2D, f: Fish) {
   ctx.restore();
 }
 
+/** The point and heading a distance s back along the trail the head has swum. */
+function alongPath(path: Point[], s: number) {
+  for (let k = 1; k < path.length; k++) {
+    const a = path[k - 1];
+    const b = path[k];
+    const d = Math.hypot(b.x - a.x, b.y - a.y);
+    if (d > 0 && s <= d) return { x: a.x + ((b.x - a.x) / d) * s, y: a.y + ((b.y - a.y) / d) * s, dir: Math.atan2(a.y - b.y, a.x - b.x) };
+    s -= d;
+  }
+  return null;
+}
+
+/**
+ * A bow wave: two faint lines peeling off the nose and spreading back in a V, like the wake
+ * lines off a jet's nose. They follow the trail the head swam, so they curve through turns,
+ * and fade along their length. Stronger the faster the fish goes.
+ */
+function drawWake(ctx: CanvasRenderingContext2D, f: Fish) {
+  const strength = Math.min(1, f.speed / f.cruise);
+  if (strength < 0.05) return;
+  const reach = f.length * 0.9;
+  const step = 1.5 * K;
+  ctx.lineWidth = K;
+  for (const side of [-1, 1]) {
+    let prev: Point | null = null;
+    for (let s = 0; s <= reach; s += step) {
+      const p = alongPath(f.path, s);
+      if (!p) break;
+      const off = side * (f.width * 0.55 + s * 0.42);
+      const q = { x: p.x - Math.sin(p.dir) * off, y: p.y + Math.cos(p.dir) * off };
+      if (prev) {
+        ctx.strokeStyle = grey(1, strength * (1 - s / reach));
+        ctx.beginPath();
+        ctx.moveTo(prev.x, prev.y);
+        ctx.lineTo(q.x, q.y);
+        ctx.stroke();
+      }
+      prev = q;
+    }
+  }
+}
+
 export default function Pond() {
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -436,24 +563,25 @@ export default function Pond() {
     const ctx = canvas.getContext("2d");
     const bctx = bloom.getContext("2d");
     const fishCanvas = document.createElement("canvas");
-    const reedCanvas = document.createElement("canvas");
+    const rockCanvas = document.createElement("canvas");
     const leafCanvas = document.createElement("canvas");
+    const wakeCanvas = document.createElement("canvas");
     const fctx = fishCanvas.getContext("2d", { willReadFrequently: true });
-    const rctx = reedCanvas.getContext("2d", { willReadFrequently: true });
+    const rctx = rockCanvas.getContext("2d", { willReadFrequently: true });
     const lctx = leafCanvas.getContext("2d", { willReadFrequently: true });
-    if (!ctx || !bctx || !fctx || !rctx || !lctx) return;
+    const wctx = wakeCanvas.getContext("2d", { willReadFrequently: true });
+    if (!ctx || !bctx || !fctx || !rctx || !lctx || !wctx) return;
 
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const rand = mulberry32(42);
 
-    let PX = 4;
+    let PX = CELL;
     let W = 0;
     let H = 0;
     let cur = new Float32Array(0);
     let prev = new Float32Array(0);
     let floor = new Float32Array(0);
     let vignette = new Float32Array(0);
-    let reeds: Blade[] = [];
     let leaves: Leaf[] = [];
     let pads: Pad[] = [];
     let image: ImageData | null = null; // one pixel per cell, for the bloom
@@ -464,8 +592,9 @@ export default function Pond() {
     let sprites: Uint32Array[] = [];
     let fish: Fish[] = [];
     let fishPx = new Uint8ClampedArray(0);
-    let reedPx = new Uint8ClampedArray(0);
+    let rockPx = new Uint8ClampedArray(0);
     let leafPx = new Uint8ClampedArray(0);
+    let wakePx = new Uint8ClampedArray(0);
     let lastSprite = -Infinity;
 
     // Caustic cells: one drifting light point per cell, padded by a cell on every side.
@@ -478,7 +607,7 @@ export default function Pond() {
 
     const resize = () => {
       const rect = wrap.getBoundingClientRect();
-      const nextPX = 4;
+      const nextPX = CELL;
       const nextS = Math.max(2, Math.round(nextPX * Math.min(2, window.devicePixelRatio || 1)));
       const nextW = Math.max(60, Math.ceil(rect.width / nextPX));
       const nextH = Math.max(40, Math.ceil(rect.height / nextPX));
@@ -489,7 +618,7 @@ export default function Pond() {
       W = nextW;
       H = nextH;
       S = nextS;
-      for (const c of [bloom, fishCanvas, reedCanvas, leafCanvas]) {
+      for (const c of [bloom, fishCanvas, rockCanvas, leafCanvas, wakeCanvas]) {
         c.width = W;
         c.height = H;
       }
@@ -506,7 +635,10 @@ export default function Pond() {
       cur = new Float32Array(W * H);
       prev = new Float32Array(W * H);
       floor = buildFloor(W, H);
-      reeds = buildReeds(W, H);
+      // Rocks never move, so they're drawn once per resize.
+      rctx.clearRect(0, 0, W, H);
+      drawRocks(rctx, buildRocks(W, H));
+      rockPx = rctx.getImageData(0, 0, W, H).data;
       image = bctx.createImageData(W, H);
       lastSprite = -Infinity;
 
@@ -522,7 +654,7 @@ export default function Pond() {
         }
       }
 
-      cell = Math.max(26, Math.round(H / 3.1));
+      cell = Math.max(26 * K, Math.round(H / 3.1));
       gw = Math.ceil(W / cell) + 2;
       gh = Math.ceil(H / cell) + 2;
       cpx = new Float32Array(gw * gh);
@@ -619,7 +751,7 @@ export default function Pond() {
         const nx = -(b.y - a.y) / d;
         const ny = (b.x - a.x) / d;
         const ramp = Math.min(1, Math.max(0, (t - 0.15) / 0.85));
-        const amp = f.length * (0.008 + 0.07 * Math.pow(ramp * ramp * (3 - 2 * ramp), 1.5)) * f.swim;
+        const amp = f.length * (0.008 + 0.055 * Math.pow(ramp * ramp * (3 - 2 * ramp), 1.5)) * f.swim;
         const off = amp * Math.sin(f.beat - 5.2 * t);
         return { x: p.x + nx * off, y: p.y + ny * off };
       });
@@ -657,7 +789,7 @@ export default function Pond() {
             for (let i = 0; i < SEGMENTS; i++) {
               const ra = A.width * bodyWidth(i / (SEGMENTS - 1));
               for (let j = 0; j < SEGMENTS; j++) {
-                const clear = ra + B.width * bodyWidth(j / (SEGMENTS - 1)) + 3;
+                const clear = ra + B.width * bodyWidth(j / (SEGMENTS - 1)) + 3 * K;
                 const ddx = A.spine[i].x - B.spine[j].x;
                 const ddy = A.spine[i].y - B.spine[j].y;
                 const d = Math.hypot(ddx, ddy) || 0.01;
@@ -705,7 +837,6 @@ export default function Pond() {
           f.beat += dt * Math.PI * 2 * (0.9 + 1.6 * f.speed / f.length);
           moveHead(f, head.x + ddx * 0.2, head.y + ddy * 0.2);
           layBody(f);
-          if (dist > 1 && rand() < 0.3) disturb(head.x, head.y, 2, -0.3);
           continue;
         }
 
@@ -805,9 +936,6 @@ export default function Pond() {
         moveHead(f, head.x + Math.cos(f.heading) * f.speed * dt, head.y + Math.sin(f.heading) * f.speed * dt);
         layBody(f);
         shiftInside(f);
-
-        // A faint wake, stronger when darting.
-        if (rand() < 0.2) disturb(f.path[0].x, f.path[0].y, 2.5, -(0.15 + f.fear * 0.8));
       }
       separate();
     };
@@ -815,6 +943,7 @@ export default function Pond() {
     // Lotus pads barely drift; ripples rock them gently and they settle back.
     const stepPads = () => {
       for (const p of pads) {
+        if (p.fixed) continue;
         const ix = Math.max(1, Math.min(W - 2, Math.round(p.x)));
         const iy = Math.max(1, Math.min(H - 2, Math.round(p.y)));
         const i = iy * W + ix;
@@ -828,7 +957,7 @@ export default function Pond() {
 
     // Leaves drift slowly and get pushed along by passing ripples.
     const stepLeaves = () => {
-      const drift = reduceMotion ? 0.002 : 0.006;
+      const drift = (reduceMotion ? 0.002 : 0.006) * K;
       for (const l of leaves) {
         const ix = Math.max(1, Math.min(W - 2, Math.round(l.x)));
         const iy = Math.max(1, Math.min(H - 2, Math.round(l.y)));
@@ -857,13 +986,13 @@ export default function Pond() {
         fctx.clearRect(0, 0, W, H);
         for (const f of fish) drawFish(fctx, f);
         fishPx = fctx.getImageData(0, 0, W, H).data;
-        rctx.clearRect(0, 0, W, H);
-        drawReeds(rctx, reeds, t);
-        reedPx = rctx.getImageData(0, 0, W, H).data;
         lctx.clearRect(0, 0, W, H);
         for (const p of pads) drawPad(lctx, p);
         for (const l of leaves) drawLeaf(lctx, l);
         leafPx = lctx.getImageData(0, 0, W, H).data;
+        wctx.clearRect(0, 0, W, H);
+        for (const f of fish) drawWake(wctx, f);
+        wakePx = wctx.getImageData(0, 0, W, H).data;
       }
 
       for (let cy = 0; cy < gh; cy++) {
@@ -920,23 +1049,29 @@ export default function Pond() {
           const shy = sy - shadowY;
           if (shx >= 0 && shy >= 0) {
             const k = (shy * W + shx) * 4;
-            const sa = Math.max(fishPx[k + 3], reedPx[k + 3] * 0.7) / 255;
-            L *= 1 - sa * 0.42;
+            L *= 1 - (fishPx[k + 3] / 255) * 0.62;
+            L *= 1 - (rockPx[k + 3] / 255) * 0.21;
           }
           const lsx = x - shadowX;
           const lsy = y - shadowY;
           if (lsx >= 0 && lsy >= 0 && leafPx[(lsy * W + lsx) * 4 + 3] > 128) L *= 0.55;
 
-          const ra = reedPx[si * 4 + 3] / 255;
-          if (ra > 0.3) L += ((reedPx[si * 4] / 255) * (0.8 + caustic * 0.5) - L) * Math.min(1, ra * 1.4);
+          const ra = rockPx[si * 4 + 3] / 255;
+          if (ra > 0.3) L += ((rockPx[si * 4] / 255) * (0.8 + caustic * 0.5) - L) * Math.min(1, ra * 1.4);
 
-          const fa = fishPx[si * 4 + 3];
+          // Koi swim just under the surface, so ripples bend them far less than the floor;
+          // otherwise their own wake shreds their outline.
+          const qx = Math.max(0, Math.min(W - 1, Math.round(x + dx * REFRACTION * 0.2)));
+          const qy = Math.max(0, Math.min(H - 1, Math.round(y + dy * REFRACTION * 0.2)));
+          const qi = (qy * W + qx) * 4;
+          const fa = fishPx[qi + 3];
           if (fa > 50) {
             const cover = fa > 140 ? 1 : 0.6; // solid body, see-through fins
-            L += ((fishPx[si * 4] / 255) * (0.92 + caustic * 0.18) - L) * cover;
+            L += ((fishPx[qi] / 255) * (0.92 + caustic * 0.18) - L) * cover;
           }
 
           L += (dx + dy) * SPECULAR; // ripple glints, lit from the top left
+          if (wakePx.length) L += (wakePx[i * 4 + 3] / 255) * 0.16; // bow wave, on the surface
 
           // Leaves float on the surface, so they are not refracted.
           if (leafPx[i * 4 + 3] > 128) L = (leafPx[i * 4] / 255) * (0.9 + caustic * 0.1);
@@ -982,7 +1117,7 @@ export default function Pond() {
     let drag: { fish: Fish; to: Point; start: Point; moved: boolean } | null = null;
 
     const fishAt = (p: Point) =>
-      fish.find((f) => f.spine.some((s, i) => Math.hypot(s.x - p.x, s.y - p.y) < f.width * bodyWidth(i / (SEGMENTS - 1)) + 4));
+      fish.find((f) => f.spine.some((s, i) => Math.hypot(s.x - p.x, s.y - p.y) < f.width * bodyWidth(i / (SEGMENTS - 1)) + 4 * K));
 
     const onDown = (e: PointerEvent) => {
       const p = toSim(e);
@@ -998,7 +1133,7 @@ export default function Pond() {
         return;
       }
 
-      disturb(p.x, p.y, 3, -5);
+      disturb(p.x, p.y, 3 * K, -5);
       for (const o of fish) {
         const d = Math.hypot(o.spine[0].x - p.x, o.spine[0].y - p.y);
         if (d < W * 0.5 && o.fear < 0.2) {
@@ -1022,7 +1157,7 @@ export default function Pond() {
         f.fleeAngle = away + angleDiff(away, toCentre) * Math.min(0.8, edgeness * edgeness);
         f.fear = 1;
         f.speed = Math.max(f.speed, f.length * 0.9);
-        disturb(head.x, head.y, 2.5, -2);
+        disturb(head.x, head.y, 2.5 * K, -2);
       } else {
         f.fear = 0; // let go: it eases back to cruising from wherever it was dropped
       }
@@ -1035,14 +1170,14 @@ export default function Pond() {
       const p = toSim(e);
       if (drag) {
         drag.to = p;
-        if (Math.hypot(p.x - drag.start.x, p.y - drag.start.y) > 2) drag.moved = true;
+        if (Math.hypot(p.x - drag.start.x, p.y - drag.start.y) > 2 * K) drag.moved = true;
         return;
       }
       canvas.style.cursor = fishAt(p) ? "grab" : "";
       if (!lastMove) {
         lastMove = p;
-      } else if (Math.hypot(p.x - lastMove.x, p.y - lastMove.y) > 3) {
-        disturb(p.x, p.y, 2, e.buttons ? -1.5 : -0.5);
+      } else if (Math.hypot(p.x - lastMove.x, p.y - lastMove.y) > 3 * K) {
+        disturb(p.x, p.y, 2 * K, e.buttons ? -1.5 : -0.5);
         lastMove = p;
       }
     };
@@ -1077,7 +1212,7 @@ export default function Pond() {
         acc -= STEP;
       }
       if (!reduceMotion && time > nextDrop) {
-        disturb(W * (0.2 + rand() * 0.6), H * (0.2 + rand() * 0.6), 2.5, -3);
+        disturb(W * (0.2 + rand() * 0.6), H * (0.2 + rand() * 0.6), 2.5 * K, -3);
         nextDrop = time + 1400 + rand() * 2400;
       }
       render(time);
