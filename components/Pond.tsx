@@ -9,8 +9,8 @@ import { useEffect, useRef } from "react";
  * ordered-dithered to a few greens, and every cell is shown as a square pixel.
  * Fish are snapped to that grid and redrawn in steps, so they move like pixel sprites.
  *
- * Tap the water to make a gentle ripple, which also nudges the floating pads around; fish
- * nearby come over to see what it was. Tap a fish to scare it, or drag it through the water.
+ * Tap the water to drop some fish food, with a gentle ripple that nudges the floating pads
+ * around; the fish come straight over and gather there to eat. Tap a fish to scare it, or drag it through the water.
  */
 
 const STEP = 1000 / 60; // fixed simulation step, so waves travel at the same speed on any display
@@ -19,8 +19,8 @@ const DAMPING = 0.985;
 const REFRACTION = 2;
 const SPECULAR = 0.08;
 const SEGMENTS = 16;
-const LEVELS = 13;
-const CELL = 3; // CSS pixels per cell
+const LEVELS = 9;
+const CELL = 4; // CSS pixels per cell
 // The scene was laid out on 4px cells. Sizes and counts measured in cells are scaled by K,
 // so the pixels can shrink without moving or resizing anything in the pond.
 const K = 4 / CELL;
@@ -72,14 +72,31 @@ type Fish = {
   fleeAngle: number;
   target: Point | null; // something worth investigating, like a tap on the water
   patches: Patch[];
+  variety: Variety;
 };
 
 // A rock on the pond floor: a lumpy outline (radius per angle step), squashed a little.
 type Rock = { x: number; y: number; r: number; squash: number; angle: number; lumps: number[]; lum: number };
 
+// Where food was dropped. Never drawn: you see it through the fish gathering to eat.
+type Feed = { x: number; y: number; until: number; nibbleAt: number };
+
 type Leaf = { x: number; y: number; vx: number; vy: number; angle: number; spin: number; size: number; lum: number };
 
 type Pad = { x: number; y: number; vx: number; vy: number; angle: number; spin: number; r: number; lum: number; flower: boolean; glow: number; fixed?: boolean; bare?: boolean };
+
+// Kohaku: a white koi with big red blotches stepping down its back, one on the head.
+// Golden Ogon: one metallic gold all over, no markings. The pond only has greens, so red reads
+// as a mid tone on white, and gold as a slightly deeper body with a bright sheen down the back.
+type Variety = "kohaku" | "ogon";
+
+const KOHAKU: Patch[] = [
+  { at: 0.06, side: 0, r: 0.9 },
+  { at: 0.28, side: 0.15, r: 1.25 },
+  { at: 0.43, side: -0.2, r: 1.1 },
+  { at: 0.6, side: 0.1, r: 1.0 },
+  { at: 0.76, side: -0.05, r: 0.7 },
+];
 
 // Dark speckles along each koi's back, placed along the body (0 = nose, 1 = tail) and across it.
 function speckles(rand: () => number): Patch[] {
@@ -119,6 +136,12 @@ function grey(l: number, a = 1) {
   return `rgba(${v},${v},${v},${a})`;
 }
 
+/** A steady pseudo-random value in [0, 1) for a grid square, for texture that doesn't move. */
+function hash(a: number, b: number) {
+  const h = Math.sin(a * 12.9898 + b * 78.233) * 43758.5453;
+  return h - Math.floor(h);
+}
+
 /**
  * The pond floor: dark and softly mottled, shelving down from the top bank, with a couple of
  * broad deep pools so the water reads as having depth.
@@ -132,12 +155,28 @@ function buildFloor(W: number, H: number) {
       const u = x / W;
       const v = y / H;
       const pool = 0.5 + 0.5 * Math.sin(u * 5.2 + 0.8) * Math.cos(v * 3.4 - 0.5);
+      // Sand: faint ridges the current has combed across the floor, a fine grain, and the odd
+      // pebble. All fixed to the floor, so they shimmer only where ripples bend the light.
+      const ridges = Math.sin(fx * 0.23 + fy * 0.08 + Math.sin(fy * 0.06) * 2.5) * 0.014;
+      const grain = (hash(Math.floor(fx), Math.floor(fy)) - 0.5) * 0.045;
+      const cx = Math.floor(fx / 9);
+      const cy = Math.floor(fy / 9);
+      let pebble = 0;
+      if (hash(cx, cy + 71) < 0.35) {
+        const px = (cx + 0.2 + hash(cx + 13, cy) * 0.6) * 9;
+        const py = (cy + 0.2 + hash(cx, cy + 29) * 0.6) * 9;
+        const r = 1.4 + hash(cx + 5, cy + 5) * 1.4;
+        pebble = Math.max(0, 1 - Math.hypot(fx - px, fy - py) / r) * 0.05;
+      }
       floor[y * W + x] =
-        0.29 -
-        v * 0.11 -
-        pool * 0.1 +
+        0.28 -
+        v * 0.08 -
+        pool * 0.07 +
         Math.sin(fx * 0.037 + 1.3) * Math.cos(fy * 0.051) * 0.035 +
-        Math.sin((fx - fy * 0.6) * 0.019) * 0.03;
+        Math.sin((fx - fy * 0.6) * 0.019) * 0.03 +
+        ridges +
+        grain +
+        pebble;
     }
   }
   return floor;
@@ -208,16 +247,20 @@ function drawRocks(ctx: CanvasRenderingContext2D, rocks: Rock[]) {
 }
 
 function makeLeaves(W: number, H: number, rand: () => number): Leaf[] {
-  return Array.from({ length: Math.max(5, Math.round(W / K / 34)) }, () => ({
-    x: rand() * W,
-    y: rand() * H,
+  const make = (r: () => number): Leaf => ({
+    x: r() * W,
+    y: r() * H,
     vx: 0,
     vy: 0,
-    angle: rand() * Math.PI * 2,
-    spin: (rand() - 0.5) * 0.004,
-    size: H * (0.035 + rand() * 0.08),
-    lum: 0.7 + rand() * 0.25,
-  }));
+    angle: r() * Math.PI * 2,
+    spin: (r() - 0.5) * 0.004,
+    size: H * (0.035 + r() * 0.08),
+    lum: 0.7 + r() * 0.25,
+  });
+  const leaves = Array.from({ length: Math.max(5, Math.round(W / K / 34)) }, () => make(rand));
+  // One more, from its own random stream so everything placed after the first set stays put.
+  leaves.push(make(mulberry32(31)));
+  return leaves;
 }
 
 function drawLeaf(ctx: CanvasRenderingContext2D, l: Leaf) {
@@ -265,6 +308,23 @@ function makePads(W: number, H: number, rand: () => number): Pad[] {
     flowering.y = plain.y;
   }
   pads.push(flowering);
+  // The leftmost pad of the upper-right bed moves down beside it, so the lower left has a pair.
+  let left = 0;
+  for (let k = 1; k < 3; k++) if (pads[k].x < pads[left].x) left = k;
+  pads[left].x = flowering.x + H * 0.17;
+  pads[left].y = flowering.y - H * 0.04;
+  // The two left in the upper-right bed sit in the top-right corner and overlap: the plain pad
+  // tucks in just below the flowering one, which is drawn on top.
+  const rest = [0, 1, 2].filter((k) => k !== left).map((k) => pads[k]);
+  const top = rest.find((p) => p.flower) ?? rest[0];
+  const under = rest.find((p) => p !== top);
+  // Up into the top-right corner, short of where the screen fades out.
+  top.x = 0.8 * W;
+  top.y = 0.25 * H;
+  if (under) {
+    under.x = top.x + H * 0.04;
+    under.y = top.y + H * 0.11;
+  }
   // Three anchored flowers in the top left, no pads, fading out with the screen's edge.
   // Their own random stream, so the beds above don't move.
   const frand = mulberry32(11);
@@ -321,6 +381,20 @@ function makePads(W: number, H: number, rand: () => number): Pad[] {
   add(0.41, 0.18, 0.045, "flower", true);
   add(0.3, 0.7, 0.04, "flower");
   add(0.14, 0.52, 0.035, "flower");
+  // A loose flower in the lower left with no pad, drifting and turning on the ripples.
+  pads.push({
+    x: 0.19 * W,
+    y: 0.64 * H,
+    vx: 0,
+    vy: 0,
+    angle: drand() * Math.PI * 2,
+    spin: 0.0008,
+    r: 0.05 * H,
+    lum: 0.5,
+    flower: true,
+    glow: 0.72,
+    bare: true,
+  });
   return pads;
 }
 
@@ -379,18 +453,39 @@ function drawPadDisc(ctx: CanvasRenderingContext2D, p: Pad, x: number, y: number
 }
 
 /**
- * One pixel per brightness level, S×S device pixels: a solid square filling the whole
- * cell, so neighbouring cells butt up with no gap. Brightness shows only as colour.
+ * One pixel per brightness level, S×S device pixels: a square with a thin dark gap around it,
+ * like the cells of an old monochrome screen. Brightness shows only as colour.
  * Level 0 is a switched-off cell: plain page background.
  */
 function buildSprites(S: number) {
   return PALETTE.map((col, k) => {
-    const c = k === 0 ? BACKGROUND : col;
-    return new Uint32Array(S * S).fill(((255 << 24) | (c[2] << 16) | (c[1] << 8) | c[0]) >>> 0);
+    const sprite = new Uint32Array(S * S);
+    if (k === 0) return sprite.fill(((255 << 24) | (BACKGROUND[2] << 16) | (BACKGROUND[1] << 8) | BACKGROUND[0]) >>> 0);
+    const gapCol = col.map((c, i) => BACKGROUND[i] + (c - BACKGROUND[i]) * 0.12);
+    const half = S * 0.4;
+    const SS = 4;
+    for (let py = 0; py < S; py++) {
+      for (let px = 0; px < S; px++) {
+        let cover = 0;
+        for (let sy = 0; sy < SS; sy++) {
+          for (let sx = 0; sx < SS; sx++) {
+            const dx = Math.abs(px + (sx + 0.5) / SS - S / 2);
+            const dy = Math.abs(py + (sy + 0.5) / SS - S / 2);
+            if (dx <= half && dy <= half) cover++;
+          }
+        }
+        cover /= SS * SS;
+        const r = Math.round(gapCol[0] + (col[0] - gapCol[0]) * cover);
+        const g = Math.round(gapCol[1] + (col[1] - gapCol[1]) * cover);
+        const b = Math.round(gapCol[2] + (col[2] - gapCol[2]) * cover);
+        sprite[py * S + px] = ((255 << 24) | (b << 16) | (g << 8) | r) >>> 0;
+      }
+    }
+    return sprite;
   });
 }
 
-function makeFish(W: number, H: number, rand: () => number): Fish {
+function makeFish(W: number, H: number, rand: () => number, variety: Variety): Fish {
   const length = H * (0.37 + rand() * 0.065);
   const heading = rand() * Math.PI * 2;
   const x = W * (0.2 + rand() * 0.6);
@@ -419,7 +514,8 @@ function makeFish(W: number, H: number, rand: () => number): Fish {
     fear: 0,
     fleeAngle: 0,
     target: null,
-    patches: speckles(rand),
+    patches: variety === "kohaku" ? KOHAKU : (speckles(rand), []), // still draw the speckles, so the random stream is unchanged
+    variety,
   };
 }
 
@@ -436,7 +532,8 @@ function drawFish(ctx: CanvasRenderingContext2D, f: Fish) {
   const swing = Math.sin(f.phase * 1.2) * 0.32;
   const tl = f.length * 0.34;
   const at = (a: number, r: number) => [tail.x + Math.cos(ta + a) * tl * r, tail.y + Math.sin(ta + a) * tl * r] as const;
-  ctx.fillStyle = grey(0.95, 0.8);
+  const tone = f.variety === "ogon" ? 0.8 : 1;
+  ctx.fillStyle = grey(0.95 * tone, 0.8);
   ctx.beginPath();
   ctx.moveTo(tail.x, tail.y);
   ctx.quadraticCurveTo(...at(0.25 + swing, 0.6), ...at(0.55 + swing * 1.4, 1));
@@ -485,18 +582,27 @@ function drawFish(ctx: CanvasRenderingContext2D, f: Fish) {
     body.quadraticCurveTo(pts[i].x, pts[i].y, m.x, m.y);
   }
 
-  ctx.fillStyle = grey(1);
+  ctx.fillStyle = grey(tone);
   ctx.fill(body);
   ctx.save();
   ctx.clip(body);
   // One flank in shade.
-  ctx.strokeStyle = grey(0.76);
+  ctx.strokeStyle = grey(0.76 * tone);
   ctx.lineWidth = f.width * 0.7;
   ctx.beginPath();
   ctx.moveTo(right[right.length - 1].x, right[right.length - 1].y);
   for (let i = right.length - 2; i >= 0; i--) ctx.lineTo(right[i].x, right[i].y);
   ctx.stroke();
-  ctx.fillStyle = grey(0.25);
+  if (f.variety === "ogon") {
+    // Metallic sheen along the back.
+    ctx.strokeStyle = grey(1);
+    ctx.lineWidth = f.width * 0.45;
+    ctx.beginPath();
+    ctx.moveTo(s[1].x, s[1].y);
+    for (let i = 2; i < n - 3; i++) ctx.lineTo(s[i].x, s[i].y);
+    ctx.stroke();
+  }
+  ctx.fillStyle = grey(0.48);
   for (const p of f.patches) {
     const i = Math.round(p.at * (n - 1));
     const a = dirAt(i) + Math.PI / 2;
@@ -583,6 +689,7 @@ export default function Pond() {
     let floor = new Float32Array(0);
     let vignette = new Float32Array(0);
     let leaves: Leaf[] = [];
+    let feed: Feed | null = null;
     let pads: Pad[] = [];
     let image: ImageData | null = null; // one pixel per cell, for the bloom
     let screen: ImageData | null = null; // the dots, at device resolution
@@ -654,7 +761,7 @@ export default function Pond() {
         }
       }
 
-      cell = Math.max(26 * K, Math.round(H / 3.1));
+      cell = Math.max(20 * K, Math.round(H / 4.2)); // smaller cells: a finer honeycomb of light
       gw = Math.ceil(W / cell) + 2;
       gh = Math.ceil(H / cell) + 2;
       cpx = new Float32Array(gw * gh);
@@ -667,7 +774,7 @@ export default function Pond() {
       }
       const count = 2;
       fish = fish.slice(0, count);
-      for (let k = fish.length; k < count; k++) fish.push(makeFish(W, H, rand));
+      for (let k = fish.length; k < count; k++) fish.push(makeFish(W, H, rand, k === 0 ? "kohaku" : "ogon"));
       if (leaves.length === 0) leaves = makeLeaves(W, H, rand);
       else for (const l of leaves) { l.x *= sx; l.y *= sy; }
       if (pads.length === 0) pads = makePads(W, H, rand);
@@ -743,6 +850,32 @@ export default function Pond() {
           need = spacing;
         }
       }
+      // A koi's head and shoulders are stiff; only the back half really bends. Pull the front of
+      // the body towards a straight line out behind the head, fading out just past halfway,
+      // so it curves like a fish rather than winding through the trail like a snake.
+      const hx = line[0].x - line[2].x;
+      const hy = line[0].y - line[2].y;
+      const hd = Math.hypot(hx, hy) || 1;
+      for (let i = 1; i < SEGMENTS; i++) {
+        const t = i / (SEGMENTS - 1);
+        const w = 0.65 * Math.pow(Math.max(0, 1 - t / 0.58), 1.2);
+        line[i] = {
+          x: line[i].x + (line[0].x - (hx / hd) * spacing * i - line[i].x) * w,
+          y: line[i].y + (line[0].y - (hy / hd) * spacing * i - line[i].y) * w,
+        };
+      }
+      // And no joint bends further than a koi's body can: in a sharp turn the tail swings
+      // wide behind instead of tracing every coil of the trail.
+      for (let i = 2; i < SEGMENTS; i++) {
+        const prevA = Math.atan2(line[i - 1].y - line[i - 2].y, line[i - 1].x - line[i - 2].x);
+        const a = Math.atan2(line[i].y - line[i - 1].y, line[i].x - line[i - 1].x);
+        const bend = angleDiff(prevA, a);
+        const max = 0.19;
+        if (Math.abs(bend) > max) {
+          const na = prevA + Math.sign(bend) * max;
+          line[i] = { x: line[i - 1].x + Math.cos(na) * spacing, y: line[i - 1].y + Math.sin(na) * spacing };
+        }
+      }
       f.spine = line.map((p, i) => {
         const t = i / (SEGMENTS - 1);
         const a = line[Math.max(0, i - 1)];
@@ -751,8 +884,8 @@ export default function Pond() {
         const nx = -(b.y - a.y) / d;
         const ny = (b.x - a.x) / d;
         const ramp = Math.min(1, Math.max(0, (t - 0.15) / 0.85));
-        const amp = f.length * (0.008 + 0.055 * Math.pow(ramp * ramp * (3 - 2 * ramp), 1.5)) * f.swim;
-        const off = amp * Math.sin(f.beat - 5.2 * t);
+        const amp = f.length * (0.007 + 0.048 * Math.pow(ramp * ramp * (3 - 2 * ramp), 1.5)) * f.swim;
+        const off = amp * Math.sin(f.beat - 4.6 * t); // under one wave along the body: a tail sweep, not a slither
         return { x: p.x + nx * off, y: p.y + ny * off };
       });
       f.phase = f.beat;
@@ -825,12 +958,16 @@ export default function Pond() {
       for (const f of fish) {
         const head = f.path[0];
 
-        // Held by the pointer: the head follows it, and the body trails along its path.
+        // Held by the pointer: the spot it was grabbed by stays under the pointer, the head
+        // turns gradually towards where it's being pulled, and the body trails along its path.
         if (drag && drag.fish === f) {
-          const ddx = drag.to.x - head.x;
-          const ddy = drag.to.y - head.y;
+          const ddx = drag.to.x + drag.offset.x - head.x;
+          const ddy = drag.to.y + drag.offset.y - head.y;
           const dist = Math.hypot(ddx, ddy);
-          if (dist > 0.5) f.heading = Math.atan2(ddy, ddx);
+          if (dist > 1.5 * K) {
+            const swing = angleDiff(f.heading, Math.atan2(ddy, ddx));
+            f.heading = angleDiff(0, f.heading + Math.max(-dt * 4, Math.min(dt * 4, swing)));
+          }
           f.turn = 0;
           f.speed = Math.min(f.length * 3, dist * 0.2 / dt);
           f.swim = 0.3 + 0.7 * Math.min(1, f.speed / (f.cruise * 1.2));
@@ -840,13 +977,32 @@ export default function Pond() {
           continue;
         }
 
+        // Food beats everything but fright: each fish heads for its own side of the spot, so
+        // they gather round it nose to nose instead of piling into each other.
+        let chase = Infinity; // how far its nose is from where it wants to feed
+        if (feed && f.fear < 0.3) {
+          const side = fish.indexOf(f) === 0 ? -1 : 1;
+          const spot = { x: feed.x + side * f.length * 0.12, y: feed.y + side * f.length * 0.05 };
+          const nx = head.x + Math.cos(f.heading) * f.width * 0.75;
+          const ny = head.y + Math.sin(f.heading) * f.width * 0.75;
+          chase = Math.hypot(spot.x - nx, spot.y - ny);
+          f.goal = spot;
+          f.goalUntil = simTime + 1;
+          if (chase < f.width * 3 && simTime >= feed.nibbleAt) {
+            disturb(nx, ny, 1.8 * K, -1); // a little gulp at the surface
+            feed.nibbleAt = simTime + 0.35 + rand() * 0.4;
+          }
+        }
+
         // Where it wants to go: a slowly changing goal inside the pond, or something worth a look.
-        if (f.target) {
+        if (chase < Infinity) {
+          // already set by the food
+        } else if (f.target) {
           f.goal = f.target;
           f.goalUntil = simTime + 4;
           f.target = null;
         }
-        if (simTime > f.goalUntil || Math.hypot(f.goal.x - head.x, f.goal.y - head.y) < f.length * 0.3) {
+        if (chase === Infinity && (simTime > f.goalUntil || Math.hypot(f.goal.x - head.x, f.goal.y - head.y) < f.length * 0.3)) {
           // Goals sit towards the far side, so the fish make long runs along the wide pond.
           const side = head.x < W / 2 ? 1 : -1;
           f.goal = { x: W / 2 + side * W * (0.12 + rand() * 0.18), y: H * (0.36 + rand() * 0.28) };
@@ -859,7 +1015,10 @@ export default function Pond() {
         by /= gd;
 
         // Keep inside the visible pond: look a body length ahead and start a wide turn early.
-        const ahead = f.length * 1.1;
+        // Going for food it only looks a little ahead and turns away gently, or food near
+        // the edge would push it back before it got there.
+        const feeding = chase < Infinity;
+        const ahead = f.length * (feeding ? 0.35 : 1.1);
         const lx = head.x + Math.cos(f.heading) * ahead;
         const ly = head.y + Math.sin(f.heading) * ahead;
         const mx = W * 0.16;
@@ -869,7 +1028,7 @@ export default function Pond() {
           const cx = W / 2 - head.x;
           const cy = H / 2 - head.y;
           const cd = Math.hypot(cx, cy) || 1;
-          const pull = Math.min(3, 0.8 + out / (f.length * 0.25)) * (1 + f.fear * 5); // even a bolting fish turns away from the edge
+          const pull = Math.min(3, 0.8 + out / (f.length * 0.25)) * (1 + f.fear * 5) * (feeding ? 0.3 : 1); // even a bolting fish turns away from the edge
           bx += (cx / cd) * pull;
           by += (cy / cd) * pull;
         }
@@ -897,7 +1056,7 @@ export default function Pond() {
             }
           }
         }
-        const urgency = Math.min(1, crowd * 0.6);
+        const urgency = Math.min(1, crowd * 0.6) * (feeding ? 0.4 : 1); // jostling for food, they put up with each other
         if (urgency > 0) {
           const ad = Math.hypot(ax, ay) || 1;
           bx = bx * (1 - urgency) + (ax / ad) * 3 * urgency;
@@ -916,8 +1075,12 @@ export default function Pond() {
         const err = angleDiff(f.heading, Math.atan2(by, bx));
         // The turning circle never gets tighter than about 0.6 body lengths (0.4 when dodging), so
         // the body, which follows the head's path, bends into a gentle arc instead of curling up.
-        const cap = Math.min(6, f.speed / (f.length * (0.6 - 0.2 * urgency)));
-        const gain = 1.2 + 2 * urgency + 8 * f.fear;
+        // Going for food it swings round tightly, so it heads straight there instead of
+        // sweeping off in a wide arc, and doesn't circle the spot once it arrives.
+        const cap = feeding
+          ? Math.min(6, Math.max(1.9, f.speed / (f.length * 0.32)))
+          : Math.min(6, f.speed / (f.length * (0.6 - 0.2 * urgency)));
+        const gain = 1.2 + 2 * urgency + 8 * f.fear + (feeding ? 3 : 0);
         const want = Math.max(-cap, Math.min(cap, err * gain));
         f.turn += (want - f.turn) * (1 - Math.exp(-dt * gain * 4.5));
         f.heading = angleDiff(0, f.heading + f.turn * dt); // kept within ±π
@@ -926,7 +1089,11 @@ export default function Pond() {
         const ebb = 1 + 0.15 * Math.sin(0.37 * simTime + 23 * f.seed);
         const goalSpeed =
           f.cruise * calm * ebb * (1 - 0.35 * Math.min(Math.abs(err), 1)) * (1 - 0.4 * urgency) + f.fear * f.length * 1.8;
-        f.speed += (goalSpeed - f.speed) * (1 - Math.exp(-dt * (f.fear > 0.15 ? 7 : 1.1)));
+        // Food: well over cruising speed on the way, then slow right down to nibble.
+        const target = feeding
+          ? f.cruise * Math.max(0.35, Math.min(2.4, (2.2 * chase) / f.length)) * (1 - 0.45 * Math.min(Math.abs(err), 1))
+          : goalSpeed;
+        f.speed += (target - f.speed) * (1 - Math.exp(-dt * (f.fear > 0.15 ? 7 : feeding ? 4 : 1.1)));
         f.fear *= Math.exp(-dt * 1.1);
 
         // Tail beats faster the faster it swims; the wave is strongest when it's working hard.
@@ -987,7 +1154,9 @@ export default function Pond() {
         for (const f of fish) drawFish(fctx, f);
         fishPx = fctx.getImageData(0, 0, W, H).data;
         lctx.clearRect(0, 0, W, H);
-        for (const p of pads) drawPad(lctx, p);
+        // Flowering pads go on top, so a plain pad never covers a flower where they overlap.
+        for (const p of pads) if (!p.flower) drawPad(lctx, p);
+        for (const p of pads) if (p.flower) drawPad(lctx, p);
         for (const l of leaves) drawLeaf(lctx, l);
         leafPx = lctx.getImageData(0, 0, W, H).data;
         wctx.clearRect(0, 0, W, H);
@@ -1010,6 +1179,7 @@ export default function Pond() {
       const warpFreq = (Math.PI * 2) / (cell * 1.6);
       const shadowX = Math.max(2, Math.round(H * 0.04));
       const shadowY = Math.max(2, Math.round(H * 0.05));
+      const glintTick = Math.floor(t * 6); // glints re-roll six times a second
 
       for (let y = 0; y < H; y++) {
         for (let x = 0; x < W; x++) {
@@ -1042,7 +1212,7 @@ export default function Pond() {
           const e = (Math.sqrt(f2) - Math.sqrt(f1)) / lineWidth;
           const caustic = Math.exp(-e * e * 1.4) * 0.85 + Math.exp(-e * 0.7) * 0.15;
 
-          let L = floor[si] + caustic * 0.08;
+          let L = floor[si] + caustic * 0.11;
 
           // Shadows on the floor, cast down and to the right.
           const shx = sx - shadowX;
@@ -1071,6 +1241,8 @@ export default function Pond() {
           }
 
           L += (dx + dy) * SPECULAR; // ripple glints, lit from the top left
+          // Sun glints blinking on and off along the bright lines of the honeycomb.
+          if (caustic > 0.55 && hash(x + glintTick * 31, y - glintTick * 17) > 0.965) L += 0.2;
           if (wakePx.length) L += (wakePx[i * 4 + 3] / 255) * 0.16; // bow wave, on the surface
 
           // Leaves float on the surface, so they are not refracted.
@@ -1114,7 +1286,7 @@ export default function Pond() {
       return { x: ((e.clientX - rect.left) / rect.width) * W, y: ((e.clientY - rect.top) / rect.height) * H };
     };
     let lastMove: Point | null = null;
-    let drag: { fish: Fish; to: Point; start: Point; moved: boolean } | null = null;
+    let drag: { fish: Fish; to: Point; start: Point; moved: boolean; offset: Point } | null = null;
 
     const fishAt = (p: Point) =>
       fish.find((f) => f.spine.some((s, i) => Math.hypot(s.x - p.x, s.y - p.y) < f.width * bodyWidth(i / (SEGMENTS - 1)) + 4 * K));
@@ -1125,7 +1297,7 @@ export default function Pond() {
       // Grab a fish. Whether it gets dragged or just tapped is decided on release.
       const f = fishAt(p);
       if (f) {
-        drag = { fish: f, to: p, start: p, moved: false };
+        drag = { fish: f, to: p, start: p, moved: false, offset: { x: f.path[0].x - p.x, y: f.path[0].y - p.y } };
         f.target = null;
         f.fear = 0;
         canvas.setPointerCapture(e.pointerId);
@@ -1134,13 +1306,16 @@ export default function Pond() {
       }
 
       disturb(p.x, p.y, 3 * K, -5);
+      // Drop food here: the fish turn and come straight over to feed.
+      feed = {
+        x: Math.max(W * 0.14, Math.min(W * 0.86, p.x)),
+        y: Math.max(H * 0.18, Math.min(H * 0.82, p.y)),
+        until: simTime + 10,
+        nibbleAt: 0,
+      };
       for (const o of fish) {
-        const d = Math.hypot(o.spine[0].x - p.x, o.spine[0].y - p.y);
-        if (d < W * 0.5 && o.fear < 0.2) {
-          const a = Math.atan2(o.spine[0].y - p.y, o.spine[0].x - p.x);
-          const off = o.length * 0.6;
-          o.target = { x: p.x + Math.cos(a) * off, y: p.y + Math.sin(a) * off };
-        }
+        o.fear = 0;
+        o.speed = Math.max(o.speed, o.cruise * 1.5);
       }
     };
 
@@ -1154,7 +1329,9 @@ export default function Pond() {
         const away = Math.atan2(head.y - drag.start.y, head.x - drag.start.x) + (rand() - 0.5) * 0.8;
         const toCentre = Math.atan2(H / 2 - head.y, W / 2 - head.x);
         const edgeness = Math.max(Math.abs(head.x / W - 0.5) * 2, Math.abs(head.y / H - 0.5) * 2);
-        f.fleeAngle = away + angleDiff(away, toCentre) * Math.min(0.8, edgeness * edgeness);
+        const flee = away + angleDiff(away, toCentre) * Math.min(0.8, edgeness * edgeness);
+        // It veers off, never flips round: a tap on the nose sends it off at an angle, not into a U-turn.
+        f.fleeAngle = f.heading + Math.max(-0.9, Math.min(0.9, angleDiff(f.heading, flee)));
         f.fear = 1;
         f.speed = Math.max(f.speed, f.length * 0.9);
         disturb(head.x, head.y, 2.5 * K, -2);
@@ -1209,6 +1386,7 @@ export default function Pond() {
         stepFish();
         stepLeaves();
         stepPads();
+        if (feed && feed.until <= simTime) feed = null; // eaten up
         acc -= STEP;
       }
       if (!reduceMotion && time > nextDrop) {
