@@ -13,8 +13,8 @@ export default function Home() {
       {/* Centered container — has horizontal padding only on larger screens */}
       {/* flex-1 lets the column fill the screen, so the footer can sit at the bottom */}
       <div className="flex flex-1 flex-col page-column">
-        {/* Pond, name, work and last played sit an equal 48px apart. */}
-        <div className="flex flex-col gap-12 pt-20">
+        {/* Pond, name, work and last played sit an equal 64px apart. */}
+        <div className="flex flex-col gap-16 pt-20">
           {/* Pond — runs between the guide lines and fades into the page on every side */}
           <section className="reveal" data-reveal>
             <div className="page-bleed">
@@ -29,17 +29,11 @@ export default function Home() {
                 className="text-[30px] md:text-[30px] leading-none"
                 style={{ fontFamily: "var(--font-ibm-plex-serif), serif", fontWeight: 700, color: "var(--accent)" }}
               >
-                shruti
+                shruti iyer
               </h1>
-              <span
-                className="text-[18px]"
-                style={{ color: "var(--accent)" }}
-              >
-                /shroo-tea/
-              </span>
             </div>
             <p className="text-muted-foreground text-[15px] max-w-2xl">
-              A running log of what I&apos;ve been doing.
+              Product Designer
             </p>
           </section>
 
@@ -59,7 +53,7 @@ export default function Home() {
         </div>
 
         {/* Footer — copyright and links, pinned to the bottom of the page when the content is short */}
-        <section className="mt-auto pt-12">
+        <section className="mt-auto pt-16">
           <Footer />
         </section>
       </div>

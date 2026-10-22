@@ -40,11 +40,10 @@ export default function Work() {
           <Link
             key={index}
             href={project.href}
-            className="group flex items-center justify-between border-b border-border last:border-b-0 cursor-pointer"
+            className="group flex items-center justify-between border-b border-border/90 last:border-b-0 cursor-pointer"
           >
-            {/* Title, then role / year trailing it on the same line: title / role / year.
-                Wraps under the title on narrow screens rather than overflowing. */}
-            <div className="flex w-full flex-wrap items-baseline gap-x-2 px-2 py-[14px] cursor-pointer">
+            {/* Title on the left, year pushed to the far right of the row. */}
+            <div className="flex w-full items-baseline justify-between gap-x-4 px-2 py-[14px] cursor-pointer">
               <span className="text-[15px] font-medium text-foreground transition-colors group-hover:text-accent-muted">
                 {project.title}
               </span>
@@ -53,8 +52,8 @@ export default function Work() {
                 {project.description}
               </span>
               */}
-              <span className="text-[12px] uppercase text-muted-foreground tracking-wide font-mono transition-colors group-hover:text-accent-muted">
-                / {project.role} / {project.year}
+              <span className="shrink-0 text-[12px] uppercase text-muted-foreground tracking-wide font-mono transition-colors group-hover:text-accent-muted">
+                {project.year}
               </span>
             </div>
           </Link>
