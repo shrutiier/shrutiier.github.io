@@ -43,7 +43,7 @@ export default function Work() {
             className="group flex items-center justify-between cursor-pointer"
           >
             {/* Title with its description beneath on the left, year pushed to the far right of the row. */}
-            <div className="flex w-full items-baseline justify-between gap-x-4 px-2 py-[14px] cursor-pointer">
+            <div className="flex w-full items-baseline justify-between gap-x-4 py-[14px] cursor-pointer">
               <div className="flex flex-col gap-[2px]">
                 <span className="text-[15px] font-medium text-foreground transition-colors group-hover:text-accent-muted">
                   {project.title}

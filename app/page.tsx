@@ -39,9 +39,7 @@ export default function Home() {
 
           {/* Work */}
           <section className="reveal" data-reveal>
-            <div className="w-full sm:-mx-2 sm:w-[calc(100%+1rem)]">
-              <Work />
-            </div>
+            <Work />
             {/* <Art /> — artworks hidden for now */}
           </section>
 
