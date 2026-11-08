@@ -14,7 +14,7 @@ import { useEffect, useRef } from "react";
  */
 
 const STEP = 1000 / 60; // fixed simulation step, so waves travel at the same speed on any display
-const SPRITE_STEP = 1000 / 14; // fish, pads and leaves redraw at this rate, like sprite animation
+const SPRITE_STEP = 1000 / 14; // pads and leaves redraw at this rate, like sprite animation
 const DAMPING = 0.985;
 const REFRACTION = 2;
 const SPECULAR = 0.08;
@@ -63,9 +63,32 @@ const SCHEMES: Record<"dark" | "light", { stops: [number, RGB][]; background: RG
 
 type Scheme = { palette: RGB[]; background: RGB; light: boolean };
 
+/**
+ * Koi colours, used in the light scheme only. The dark pond stays one green so the koi read as
+ * glowing light; on paper they get their real colours. Each variety is a short ladder, darkest
+ * (the shaded flank) to lightest (the sunlit back), and these are appended to the palette after
+ * the LEVELS water tones: a cell's level is LEVELS + KOI_STEPS * kind + step.
+ */
+const KOI_STEPS = 6;
+const KOI: RGB[][] = [
+  [[118, 138, 182], [160, 177, 212], [204, 215, 236], [234, 240, 250], [250, 252, 255], [255, 255, 255]], // showa: white patches, cool-shadowed
+  [[140, 0, 16], [190, 0, 20], [232, 6, 26], [255, 24, 30], [255, 52, 38], [255, 88, 62]], // showa: vivid red patches
+  [[6, 6, 8], [14, 14, 18], [24, 24, 30], [36, 36, 44], [52, 52, 62], [74, 74, 86]], // showa: sumi, lacquer black
+  [[176, 60, 0], [222, 96, 0], [252, 132, 0], [255, 164, 0], [255, 190, 12], [255, 216, 64]], // golden ogon: saturated orange-gold
+];
+// Which koi colour a fish pixel is, carried in the blue channel of the fish canvas (whose red
+// channel is brightness). The dark pond reads only red, so this costs it nothing. Tags are 60
+// apart so a blended edge still rounds to the right colour.
+const KOI_WHITE = 40, KOI_RED = 100, KOI_SUMI = 160, KOI_GOLD = 220;
+const koiKindOf = (tag: number) => Math.max(0, Math.min(3, Math.round((tag - KOI_WHITE) / 60)));
+// The brightness each colour is painted at, in both themes. In the dark pond these are the only
+// difference between them; in light mode the painted brightness over this is the flank shading.
+const KOI_LUM = [1, 0.72, 0.5, 0.8];
+const KOI_DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1], [1, -1], [-1, 1]] as const;
+
 // In the light scheme, shadows pull the water towards this brightness instead of darkening it.
 // Darkening would mean less ink, and the shadows would print as pale, almost white, patches.
-const SHADOW_INK = 0.5;
+const SHADOW_INK = 0.6;
 
 function makeScheme(theme: "dark" | "light"): Scheme {
   const { stops, background } = SCHEMES[theme];
@@ -78,7 +101,8 @@ function makeScheme(theme: "dark" | "light"): Scheme {
     const t = (v - a) / (b - a);
     return ca.map((c, i) => Math.round(c + (cb[i] - c) * t)) as RGB;
   });
-  return { palette, background, light: theme === "light" };
+  const light = theme === "light";
+  return { palette: light ? [...palette, ...KOI.flat()] : palette, background, light };
 }
 
 /** The theme the page is showing, from the class ThemeProvider puts on <html>. */
@@ -88,7 +112,7 @@ function pageTheme(): "dark" | "light" {
 
 type Point = { x: number; y: number };
 
-type Patch = { at: number; side: number; r: number };
+type Patch = { at: number; side: number; r: number; kind?: number };
 
 type Fish = {
   path: Point[]; // where the head has been, newest first; the body follows this exact path
@@ -122,18 +146,27 @@ type Leaf = { x: number; y: number; vx: number; vy: number; angle: number; spin:
 
 type Pad = { x: number; y: number; vx: number; vy: number; angle: number; spin: number; r: number; lum: number; flower: boolean; glow: number; fixed?: boolean; bare?: boolean };
 
-// Kohaku: a white koi with big red blotches stepping down its back, one on the head.
-// Golden Ogon: one metallic gold all over, no markings. The pond only has greens, so red reads
-// as a mid tone on white, and gold as a slightly deeper body with a bright sheen down the back.
-type Variety = "kohaku" | "ogon";
+// Showa: a white koi with big red blotches down its back, one on the head, and black (sumi)
+// patches wrapping round them and the base of the front fins.
+// Golden Ogon: orange-gold all over, no markings, with long flowing fins.
+// The dark pond only has greens, so white reads as the brightest, gold and red as mid tones
+// and sumi as the deepest.
+type Variety = "showa" | "ogon";
 
-const KOHAKU: Patch[] = [
-  { at: 0.06, side: 0, r: 0.9 },
-  { at: 0.28, side: 0.15, r: 1.25 },
-  { at: 0.43, side: -0.2, r: 1.1 },
-  { at: 0.6, side: 0.1, r: 1.0 },
-  { at: 0.76, side: -0.05, r: 0.7 },
+// On the white body: red first, then sumi over it, as it lies on the real fish.
+const SHOWA: Patch[] = [
+  { at: 0.07, side: 0.05, r: 0.9, kind: 1 },
+  { at: 0.3, side: 0.15, r: 1.35, kind: 1 },
+  { at: 0.52, side: 0.25, r: 0.95, kind: 1 },
+  { at: 0.68, side: -0.3, r: 0.6, kind: 1 },
+  { at: 0.14, side: -0.5, r: 0.5, kind: 2 },
+  { at: 0.24, side: -0.4, r: 0.75, kind: 2 },
+  { at: 0.39, side: -0.1, r: 0.65, kind: 2 },
+  { at: 0.45, side: 0.45, r: 0.55, kind: 2 },
+  { at: 0.62, side: 0.3, r: 0.6, kind: 2 },
+  { at: 0.8, side: 0, r: 0.5, kind: 2 },
 ];
+const KOI_TAGS = [KOI_WHITE, KOI_RED, KOI_SUMI, KOI_GOLD];
 
 // Dark speckles along each koi's back, placed along the body (0 = nose, 1 = tail) and across it.
 function speckles(rand: () => number): Patch[] {
@@ -499,7 +532,7 @@ function buildSprites(S: number, { palette, background }: Scheme) {
     const sprite = new Uint32Array(S * S);
     if (k === 0) return sprite.fill(((255 << 24) | (background[2] << 16) | (background[1] << 8) | background[0]) >>> 0);
     const gapCol = col.map((c, i) => background[i] + (c - background[i]) * 0.12);
-    const half = S * 0.4;
+    const half = S * 0.45; // a gap of 0.1 cell around each square
     const SS = 4;
     for (let py = 0; py < S; py++) {
       for (let px = 0; px < S; px++) {
@@ -551,50 +584,130 @@ function makeFish(W: number, H: number, rand: () => number, variety: Variety): F
     fear: 0,
     fleeAngle: 0,
     target: null,
-    patches: variety === "kohaku" ? KOHAKU : (speckles(rand), []), // still draw the speckles, so the random stream is unchanged
+    patches: variety === "showa" ? SHOWA : (speckles(rand), []), // still draw the speckles, so the random stream is unchanged
     variety,
   };
 }
 
-/** Draws a fish as brightness (red channel) and coverage (alpha), snapped to the dot grid. */
+/**
+ * A long, soft fin trailing from (x, y) at `angle`: a tapering ribbon whose centre line bends
+ * further the further out it gets, with the bend running down it a little late, like fabric
+ * following a wave. Used for the koi's tails and the ogon's long fins.
+ */
+function ribbon(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  angle: number,
+  length: number,
+  width: number,
+  phase: number,
+  amp: number,
+  paint: (alpha: number) => string,
+  veil = false,
+) {
+  const SEGS = 12;
+  const mid: Point[] = [{ x, y }];
+  const dirs: number[] = [angle];
+  let a = angle;
+  for (let j = 1; j <= SEGS; j++) {
+    const t = j / SEGS;
+    a = angle + Math.sin(phase - t * 2.4) * amp * t;
+    const prev = mid[j - 1];
+    mid.push({ x: prev.x + Math.cos(a) * (length / SEGS), y: prev.y + Math.sin(a) * (length / SEGS) });
+    dirs.push(a);
+  }
+  const left: Point[] = [];
+  const right: Point[] = [];
+  for (let j = 0; j <= SEGS; j++) {
+    const t = j / SEGS;
+    // A fin is widest a third of the way out, then tapers to a soft point. A veil (the tail)
+    // starts at the body's width and opens out, staying broad to its trailing edge.
+    const w = veil
+      ? width * (0.5 + 0.7 * Math.sin(Math.PI * Math.min(1, t * 0.8))) * (1 - t * 0.25)
+      : width * Math.sin(Math.PI * Math.min(1, 0.25 + t * 0.95)) * (1 - t * 0.55);
+    const n = dirs[j] + Math.PI / 2;
+    left.push({ x: mid[j].x + Math.cos(n) * w, y: mid[j].y + Math.sin(n) * w });
+    right.push({ x: mid[j].x - Math.cos(n) * w, y: mid[j].y - Math.sin(n) * w });
+  }
+  const pts = [...left, ...right.reverse()];
+  // Solid at the root, fading out to the tip. The pond turns this fade into scattered pixels.
+  const g = ctx.createLinearGradient(x, y, mid[SEGS].x, mid[SEGS].y);
+  g.addColorStop(0, paint(0.97));
+  g.addColorStop(0.35, paint(0.75));
+  g.addColorStop(0.75, paint(0.3));
+  g.addColorStop(1, paint(0.02));
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x, pts[0].y);
+  for (let i = 1; i < pts.length - 1; i++) {
+    const m = { x: (pts[i].x + pts[i + 1].x) / 2, y: (pts[i].y + pts[i + 1].y) / 2 };
+    ctx.quadraticCurveTo(pts[i].x, pts[i].y, m.x, m.y);
+  }
+  ctx.closePath();
+  ctx.fill();
+}
+
+/** Draws a fish as brightness (red channel) and coverage (alpha). */
 function drawFish(ctx: CanvasRenderingContext2D, f: Fish) {
-  const s = f.spine.map((p) => ({ x: Math.round(p.x), y: Math.round(p.y) }));
+  // Brightness in red/green, koi colour tag in blue (see KOI_WHITE).
+  const ogon = f.variety === "ogon";
+  const kind = ogon ? KOI_GOLD : KOI_WHITE;
+  const shade = (l: number, a = 1, tag = kind) => { const v = Math.round(Math.max(0, Math.min(1, l)) * 255); return `rgba(${v},${v},${tag},${a})`; };
+  const s = f.spine;
   const n = s.length;
   const dirAt = (i: number) =>
     i === 0 ? Math.atan2(s[0].y - s[1].y, s[0].x - s[1].x) : Math.atan2(s[i - 1].y - s[i].y, s[i - 1].x - s[i].x);
 
-  // Tail: two flowing lobes.
   const tail = s[n - 1];
   const ta = dirAt(n - 1) + Math.PI;
   const swing = Math.sin(f.phase * 1.2) * 0.32;
-  const tl = f.length * 0.34;
-  const at = (a: number, r: number) => [tail.x + Math.cos(ta + a) * tl * r, tail.y + Math.sin(ta + a) * tl * r] as const;
-  const tone = f.variety === "ogon" ? 0.8 : 1;
-  ctx.fillStyle = grey(0.95 * tone, 0.8);
-  ctx.beginPath();
-  ctx.moveTo(tail.x, tail.y);
-  ctx.quadraticCurveTo(...at(0.25 + swing, 0.6), ...at(0.55 + swing * 1.4, 1));
-  ctx.quadraticCurveTo(...at(swing, 0.5), ...at(-0.55 + swing * 1.4, 1));
-  ctx.quadraticCurveTo(...at(-0.25 + swing, 0.6), tail.x, tail.y);
-  ctx.fill();
+  const tl = f.length * 0.36;
+  const tone = ogon ? KOI_LUM[3] : KOI_LUM[0];
+  // A flowing tail: one veil that carries on the body's swimming wave, so it trails behind and
+  // ripples a beat late, softly split into two lobes towards the end.
+  const tailTone = (ogon ? 0.85 : 0.95) * tone;
+  const tailDir = ta + swing * 0.35;
+  ribbon(ctx, tail.x, tail.y, tailDir, tl * 0.95, f.width * 0.6, f.phase - 0.9, 0.5, (a) => shade(tailTone, a), true);
+  for (const side of [-1, 1]) {
+    ribbon(ctx, tail.x, tail.y, tailDir + side * 0.16, tl * 1.1, f.width * 0.35, f.phase - 1.1 - side * 0.15, 0.55, (a) => shade(tailTone, a * 0.9));
+  }
 
   // Pectoral and pelvic fins, sweeping back as they paddle.
   const flap = Math.sin(f.phase * 0.7) * 0.3;
-  for (const [idx, size] of [[3, 1.05], [8, 0.6]] as const) {
+  const finScale = ogon ? 1.25 : 1;
+  // The ogon's long fins are a shade greyer than its body, so they read as fins, not more fish.
+  const finTone = ogon ? 0.72 : 0.95;
+  for (const [idx, size] of [[3, 1.05 * finScale], [8, 0.6 * finScale]] as const) {
     const a = dirAt(idx);
     for (const side of [-1, 1]) {
       const fa = a + side * (2.45 + flap * side);
+      ctx.fillStyle = shade(finTone * tone, 0.8);
+      if (ogon) {
+        // Long, trailing fins that ripple out behind the paddle stroke.
+        const rx = s[idx].x + Math.cos(fa) * f.width * 0.55;
+        const ry = s[idx].y + Math.sin(fa) * f.width * 0.55;
+        ribbon(ctx, rx, ry, fa - side * 0.25, f.width * size * 2.3, f.width * size * 0.55, f.phase * 0.7 + side, 0.4 * side, (al) => shade(0.85 * tone, al));
+        continue;
+      }
       ctx.beginPath();
       ctx.ellipse(
-        s[idx].x + Math.cos(fa) * f.width * 1.05,
-        s[idx].y + Math.sin(fa) * f.width * 1.05,
+        s[idx].x + Math.cos(fa) * f.width * (0.3 + size * 0.75),
+        s[idx].y + Math.sin(fa) * f.width * (0.3 + size * 0.75),
         f.width * size,
-        f.width * size * 0.42,
+        f.width * size * (ogon ? 0.5 : 0.42),
         fa,
         0,
         Math.PI * 2,
       );
       ctx.fill();
+      if (!ogon && idx === 3) {
+        // Showa's black fin bases (motoguro).
+        ctx.fillStyle = shade(KOI_LUM[2], 0.8, KOI_SUMI);
+        ctx.beginPath();
+        ctx.ellipse(s[idx].x + Math.cos(fa) * f.width * 0.8, s[idx].y + Math.sin(fa) * f.width * 0.8, f.width * size * 0.45, f.width * size * 0.3, fa, 0, Math.PI * 2);
+        ctx.fill();
+      }
     }
   }
 
@@ -619,28 +732,29 @@ function drawFish(ctx: CanvasRenderingContext2D, f: Fish) {
     body.quadraticCurveTo(pts[i].x, pts[i].y, m.x, m.y);
   }
 
-  ctx.fillStyle = grey(tone);
+  ctx.fillStyle = shade(tone);
   ctx.fill(body);
   ctx.save();
   ctx.clip(body);
   // One flank in shade.
-  ctx.strokeStyle = grey(0.76 * tone);
+  ctx.strokeStyle = shade(0.76 * tone);
   ctx.lineWidth = f.width * 0.7;
   ctx.beginPath();
   ctx.moveTo(right[right.length - 1].x, right[right.length - 1].y);
   for (let i = right.length - 2; i >= 0; i--) ctx.lineTo(right[i].x, right[i].y);
   ctx.stroke();
-  if (f.variety === "ogon") {
+  if (ogon) {
     // Metallic sheen along the back.
-    ctx.strokeStyle = grey(1);
+    ctx.strokeStyle = shade(1);
     ctx.lineWidth = f.width * 0.45;
     ctx.beginPath();
     ctx.moveTo(s[1].x, s[1].y);
     for (let i = 2; i < n - 3; i++) ctx.lineTo(s[i].x, s[i].y);
     ctx.stroke();
   }
-  ctx.fillStyle = grey(0.48);
   for (const p of f.patches) {
+    const pk = p.kind ?? 1;
+    ctx.fillStyle = shade(KOI_LUM[pk], 1, KOI_TAGS[pk]);
     const i = Math.round(p.at * (n - 1));
     const a = dirAt(i) + Math.PI / 2;
     const w = f.width * bodyWidth(p.at);
@@ -812,7 +926,7 @@ export default function Pond() {
       }
       const count = 2;
       fish = fish.slice(0, count);
-      for (let k = fish.length; k < count; k++) fish.push(makeFish(W, H, rand, k === 0 ? "kohaku" : "ogon"));
+      for (let k = fish.length; k < count; k++) fish.push(makeFish(W, H, rand, k === 0 ? "showa" : "ogon"));
       if (leaves.length === 0) leaves = makeLeaves(W, H, rand);
       else for (const l of leaves) { l.x *= sx; l.y *= sy; }
       if (pads.length === 0) pads = makePads(W, H, rand);
@@ -975,6 +1089,17 @@ export default function Pond() {
             if (px === 0 && py === 0) continue;
             const aHeld = drag?.fish === A;
             const bHeld = drag?.fish === B;
+            if (aHeld || bHeld) {
+              // Bumped by a fish being carried: a small nudge each step, never a jump. By now it is
+              // usually already swimming off (see stepFish), so the nudge just keeps them apart.
+              const free = aHeld ? B : A;
+              const sign = aHeld ? -1 : 1;
+              const m = Math.hypot(px, py);
+              const step = Math.min(m * 0.2, 0.35 * K);
+              translateFish(free, (px / m) * step * sign, (py / m) * step * sign);
+              shiftInside(free);
+              continue;
+            }
             const shareA = aHeld ? 0 : bHeld ? 1 : 0.5;
             const shareB = 1 - shareA;
             translateFish(A, px * shareA, py * shareA);
@@ -1102,6 +1227,39 @@ export default function Pond() {
           if (urgency > 0.6) f.goalUntil = Math.min(f.goalUntil, simTime + 1.2); // pick somewhere else soon
         }
 
+        // A fish being carried about is a disturbance in the water. Like a real koi it senses it
+        // coming through the pressure wave before contact and slips away: the closer it gets,
+        // the more it hurries, always swimming off from the nearest part of it.
+        if (drag && drag.fish !== f) {
+          const held = drag.fish;
+          const range = f.length * 1.3;
+          let best = range;
+          let awayX = 0;
+          let awayY = 0;
+          for (const q of [head, f.spine[Math.floor(SEGMENTS * 0.4)]]) {
+            for (const m of held.spine) {
+              const ddx = q.x - m.x;
+              const ddy = q.y - m.y;
+              const d = Math.hypot(ddx, ddy) || 0.01;
+              if (d < best) {
+                best = d;
+                awayX = ddx / d;
+                awayY = ddy / d;
+              }
+            }
+          }
+          if (best < range) {
+            // Felt sooner and more sharply when the carried fish is moving fast.
+            const rush = Math.min(1, held.speed / held.cruise / 3);
+            const threat = (1 - best / range) ** 1.4 * (0.55 + 0.45 * rush);
+            const away = Math.atan2(awayY, awayX);
+            // Steer off to the side it's already facing rather than turning back into it.
+            f.fleeAngle = f.heading + Math.max(-1.3, Math.min(1.3, angleDiff(f.heading, away)));
+            f.fear = Math.max(f.fear, threat * 0.7);
+            f.goalUntil = Math.min(f.goalUntil, simTime + 0.5); // and settle somewhere new after
+          }
+        }
+
         // Fear pulls hard in the escape direction.
         if (f.fear > 0.02) {
           bx += Math.cos(f.fleeAngle) * f.fear * 6;
@@ -1118,7 +1276,7 @@ export default function Pond() {
         const cap = feeding
           ? Math.min(6, Math.max(1.9, f.speed / (f.length * 0.32)))
           : Math.min(6, f.speed / (f.length * (0.6 - 0.2 * urgency)));
-        const gain = 1.2 + 2 * urgency + 8 * f.fear + (feeding ? 3 : 0);
+        const gain = 1.2 + 2 * urgency + 3.5 * f.fear + (feeding ? 3 : 0);
         const want = Math.max(-cap, Math.min(cap, err * gain));
         f.turn += (want - f.turn) * (1 - Math.exp(-dt * gain * 4.5));
         f.heading = angleDiff(0, f.heading + f.turn * dt); // kept within ±π
@@ -1126,12 +1284,12 @@ export default function Pond() {
         // Cruise with a slow ebb and flow, ease off into turns and near other fish, bolt when scared.
         const ebb = 1 + 0.15 * Math.sin(0.37 * simTime + 23 * f.seed);
         const goalSpeed =
-          f.cruise * calm * ebb * (1 - 0.35 * Math.min(Math.abs(err), 1)) * (1 - 0.4 * urgency) + f.fear * f.length * 1.8;
+          f.cruise * calm * ebb * (1 - 0.35 * Math.min(Math.abs(err), 1)) * (1 - 0.4 * urgency) + f.fear * f.length * 0.75;
         // Food: well over cruising speed on the way, then slow right down to nibble.
         const target = feeding
           ? f.cruise * Math.max(0.35, Math.min(2.4, (2.2 * chase) / f.length)) * (1 - 0.45 * Math.min(Math.abs(err), 1))
           : goalSpeed;
-        f.speed += (target - f.speed) * (1 - Math.exp(-dt * (f.fear > 0.15 ? 7 : feeding ? 4 : 1.1)));
+        f.speed += (target - f.speed) * (1 - Math.exp(-dt * (f.fear > 0.15 ? 2.5 : feeding ? 4 : 1.1)));
         f.fear *= Math.exp(-dt * 1.1);
 
         // Tail beats faster the faster it swims; the wave is strongest when it's working hard.
@@ -1185,21 +1343,21 @@ export default function Pond() {
       if (!image) return;
       const t = (time / 1000) * (reduceMotion ? 0.25 : 1);
 
-      // Sprites update in steps, not every frame.
+      // Koi redraw every frame so they glide smoothly; the drifting pads and leaves step.
+      fctx.clearRect(0, 0, W, H);
+      for (const f of fish) drawFish(fctx, f);
+      fishPx = fctx.getImageData(0, 0, W, H).data;
+      wctx.clearRect(0, 0, W, H);
+      for (const f of fish) drawWake(wctx, f);
+      wakePx = wctx.getImageData(0, 0, W, H).data;
       if (time - lastSprite >= SPRITE_STEP) {
         lastSprite = time;
-        fctx.clearRect(0, 0, W, H);
-        for (const f of fish) drawFish(fctx, f);
-        fishPx = fctx.getImageData(0, 0, W, H).data;
         lctx.clearRect(0, 0, W, H);
         // Flowering pads go on top, so a plain pad never covers a flower where they overlap.
         for (const p of pads) if (!p.flower) drawPad(lctx, p);
         for (const p of pads) if (p.flower) drawPad(lctx, p);
         for (const l of leaves) drawLeaf(lctx, l);
         leafPx = lctx.getImageData(0, 0, W, H).data;
-        wctx.clearRect(0, 0, W, H);
-        for (const f of fish) drawWake(wctx, f);
-        wakePx = wctx.getImageData(0, 0, W, H).data;
       }
 
       for (let cy = 0; cy < gh; cy++) {
@@ -1258,7 +1416,7 @@ export default function Pond() {
           const shy = sy - shadowY;
           if (shx >= 0 && shy >= 0) {
             const k = (shy * W + shx) * 4;
-            shade *= 1 - (fishPx[k + 3] / 255) * 0.62;
+            shade *= 1 - (fishPx[k + 3] / 255) * (scheme.light ? 0.78 : 0.62);
             shade *= 1 - (rockPx[k + 3] / 255) * 0.21;
           }
           const lsx = x - shadowX;
@@ -1267,17 +1425,62 @@ export default function Pond() {
           if (shade < 1) L = scheme.light ? L + (SHADOW_INK - L) * (1 - shade) : L * shade;
 
           const ra = rockPx[si * 4 + 3] / 255;
-          if (ra > 0.3) L += ((rockPx[si * 4] / 255) * (0.8 + caustic * 0.5) - L) * Math.min(1, ra * 1.4);
+          if (ra > 0.3) {
+            L += ((rockPx[si * 4] / 255) * (0.8 + caustic * 0.5) - L) * Math.min(1, ra * 1.4);
+            if (scheme.light) L = Math.min(1, L + 0.16 * Math.min(1, ra * 1.4)); // more ink on paper, so rocks read
+          }
 
           // Koi swim just under the surface, so ripples bend them far less than the floor;
           // otherwise their own wake shreds their outline.
           const qx = Math.max(0, Math.min(W - 1, Math.round(x + dx * REFRACTION * 0.2)));
           const qy = Math.max(0, Math.min(H - 1, Math.round(y + dy * REFRACTION * 0.2)));
           const qi = (qy * W + qx) * 4;
-          const fa = fishPx[qi + 3];
+          let fa = fishPx[qi + 3];
+          // The koi's flowing tails (and the ogon's long fins) fade towards their tips. Rather than a see-through wash,
+          // that fade becomes fewer and fewer solid pixels, dithered like the rest of the pond.
+          let finPixel = false;
+          if (fa > 8 && fa < 200) {
+            finPixel = Math.pow(fa / 255, 0.8) > BAYER[(y & 3) * 4 + (x & 3)];
+            fa = finPixel ? 255 : 0;
+          }
+          let koiKind = -1;
+          let koiT = 0;
+          let koiEdge = 0; // light mode: how far this koi pixel gives way to the water's green
           if (fa > 50) {
             const cover = fa > 140 ? 1 : 0.6; // solid body, see-through fins
-            L += ((fishPx[qi] / 255) * (0.92 + caustic * 0.18) - L) * cover;
+            // On paper a bright fish means dark ink, so the see-through fringe is kept pale there.
+            const edgeInk = scheme.light && fa <= 140 ? 0.5 : 1;
+            L += ((fishPx[qi] / 255) * (0.92 + caustic * 0.18) * edgeInk - L) * cover;
+            if (scheme.light && fa > 140) {
+              const tag = fishPx[qi + 2];
+              koiKind = koiKindOf(tag);
+              // Shade each koi as a rounded body lit from the top left (the same light as the ripple
+              // glints). Sampling the fish canvas a few cells out in eight directions gives both how
+              // deep inside the body this pixel is and which way its surface faces: more fish to the
+              // lower right means this pixel is on the upper-left flank, turned towards the light.
+              let inside = 0, samples = 0, nx = 0, ny = 0;
+              for (let r = 1; r <= 3; r++) {
+                for (const [ox2, oy2] of KOI_DIRS) {
+                  const sx2 = qx + ox2 * r, sy2 = qy + oy2 * r;
+                  samples++;
+                  const hit = sx2 >= 0 && sy2 >= 0 && sx2 < W && sy2 < H && fishPx[(sy2 * W + sx2) * 4 + 3] > 140;
+                  if (hit) inside++; else { nx += ox2; ny += oy2; }
+                }
+              }
+              const depth = inside / samples; // 1 deep in the body, lower towards the rim
+              const nl = Math.hypot(nx, ny) || 1;
+              // How much the surface faces the light, -1 (turned away) to 1 (facing it); flat on the spine.
+              const facing = ((-nx - ny) / nl) * Math.SQRT1_2 * Math.min(1, (1 - depth) * 2.2);
+              // The painted flank shade (red channel below full brightness) darkens one side further.
+              const lum = fishPx[qi] / 255;
+              const flank = Math.min(1, lum / KOI_LUM[koiKind]);
+              // Kept gentle: a soft turn from the lit side to the shaded one, not a hard split.
+              let shadeT = 0.7 + facing * 0.17 + (depth - 0.6) * 0.3 - (1 - flank) * 0.45;
+              if (depth > 0.8 && facing > -0.1) shadeT += 0.12; // highlight running down the back
+              koiT = shadeT + (caustic - 0.4) * 0.12;
+              // Towards the rim the koi dissolves into the water's green, like the fins already do.
+              koiEdge = finPixel ? 0 : Math.max(0, Math.min(1, (0.55 - depth) / 0.4));
+            }
           }
 
           L += (dx + dy) * SPECULAR; // ripple glints, lit from the top left
@@ -1286,13 +1489,24 @@ export default function Pond() {
           if (wakePx.length) L += (wakePx[i * 4 + 3] / 255) * 0.16; // bow wave, on the surface
 
           // Leaves float on the surface, so they are not refracted.
-          if (leafPx[i * 4 + 3] > 128) L = (leafPx[i * 4] / 255) * (0.9 + caustic * 0.1);
+          if (leafPx[i * 4 + 3] > 128) {
+            L = (leafPx[i * 4] / 255) * (0.9 + caustic * 0.1);
+            if (scheme.light) L = Math.min(1, L * 1.2 + 0.16); // pads and leaves: more ink on paper, so they read
+            koiKind = -1;
+          }
 
           const on = vignette[i];
           L *= 0.45 + 0.55 * on;
 
           const n = BAYER[(y & 3) * 4 + (x & 3)];
-          const k = on <= n ? 0 : Math.max(0, Math.min(last, Math.floor(L * last + n)));
+          let k = on <= n ? 0 : Math.max(0, Math.min(last, Math.floor(L * last + n)));
+          if (k > 0 && koiKind >= 0 && koiEdge * 0.85 > n) {
+            k = Math.max(1, Math.min(last, Math.floor(L * 0.45 * last + n)));
+          } else if (k > 0 && koiKind >= 0) {
+            // Gentler dither than the water, so the shading reads as form rather than speckle.
+            const step = Math.max(0, Math.min(KOI_STEPS - 1, Math.floor(koiT * (KOI_STEPS - 1) + 0.5 + (n - 0.5) * 0.5)));
+            k = LEVELS + koiKind * KOI_STEPS + step;
+          }
           levels[i] = k;
           const col = scheme.palette[k];
           const o = i * 4;
@@ -1375,7 +1589,7 @@ export default function Pond() {
         // It veers off, never flips round: a tap on the nose sends it off at an angle, not into a U-turn.
         f.fleeAngle = f.heading + Math.max(-0.9, Math.min(0.9, angleDiff(f.heading, flee)));
         f.fear = 1;
-        f.speed = Math.max(f.speed, f.length * 0.9);
+        f.speed = Math.max(f.speed, f.length * 0.45);
         disturb(head.x, head.y, 2.5 * K, -2);
       } else {
         f.fear = 0; // let go: it eases back to cruising from wherever it was dropped
