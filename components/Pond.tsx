@@ -20,6 +20,50 @@ const REFRACTION = 2;
 const SPECULAR = 0.08;
 const SEGMENTS = 16;
 const LEVELS = 9;
+// The pond's outline: a rounded rectangle, fading out dot by dot at its rim. POND_ASPECT is its
+// width over its height and POND_CORNER the corner radius as a share of the height: 0.5 gives
+// fully round ends (and with an aspect of 1, a circle). POND_ROUND off brings back the original
+// wide screen with its soft rectangular edges.
+const POND_ROUND = true;
+const POND_ASPECT = 1.4;
+const POND_CORNER = 0.4;
+// How far in from the outline the picture starts to dissolve, as a share of the height.
+const POND_FADE = 0.17;
+// The rounded pond reuses the wide pond's layout of pads and rocks, drawn this far in towards
+// the middle so they sit in the water rather than out in the faded rim.
+const ROUND_PULL = POND_ASPECT >= 1.4 ? 0.93 : 0.74;
+// Fish, pads, rocks and the honeycomb are sized from the pond's height. A pond taller for its
+// width than the original 16:9 one scales them down to keep the same proportions.
+const POND_SCALE = POND_ROUND ? Math.min(1, POND_ASPECT / (16 / 9)) : 1;
+
+/**
+ * Signed distance from (x, y) to the pond's rounded outline, in cells: negative inside. With the
+ * outward direction at that point, for nudging things back in.
+ */
+function pondEdge(x: number, y: number, W: number, H: number) {
+  const r = POND_CORNER * H;
+  const dx = x - W / 2;
+  const dy = y - H / 2;
+  const qx = Math.abs(dx) - (W / 2 - r);
+  const qy = Math.abs(dy) - (H / 2 - r);
+  const ox = Math.max(qx, 0);
+  const oy = Math.max(qy, 0);
+  const outside = Math.hypot(ox, oy);
+  const d = outside + Math.min(Math.max(qx, qy), 0) - r;
+  let nx: number;
+  let ny: number;
+  if (outside > 0) {
+    nx = (Math.sign(dx) * ox) / outside;
+    ny = (Math.sign(dy) * oy) / outside;
+  } else if (qx > qy) {
+    nx = Math.sign(dx) || 1;
+    ny = 0;
+  } else {
+    nx = 0;
+    ny = Math.sign(dy) || 1;
+  }
+  return { d, nx, ny };
+}
 const CELL = 4; // CSS pixels per cell
 // The scene was laid out on 4px cells. Sizes and counts measured in cells are scaled by K,
 // so the pixels can shrink without moving or resizing anything in the pond.
@@ -278,7 +322,7 @@ function buildRocks(W: number, H: number) {
     (s): Rock => ({
       x: s.x * W,
       y: s.y * H,
-      r: s.r * H,
+      r: s.r * H * POND_SCALE,
       squash: 0.7 + rand() * 0.15,
       angle: (rand() - 0.5) * 0.6,
       lumps: Array.from({ length: 9 }, () => 0.82 + rand() * 0.22),
@@ -332,7 +376,7 @@ function makeLeaves(W: number, H: number, rand: () => number): Leaf[] {
     vy: 0,
     angle: r() * Math.PI * 2,
     spin: (r() - 0.5) * 0.004,
-    size: H * (0.035 + r() * 0.08),
+    size: H * POND_SCALE * (0.035 + r() * 0.08),
     lum: 0.7 + r() * 0.25,
   });
   const leaves = Array.from({ length: Math.max(5, Math.round(W / K / 34)) }, () => make(rand));
@@ -357,13 +401,18 @@ function drawLeaf(ctx: CanvasRenderingContext2D, l: Leaf) {
   ctx.fill();
 }
 
+/** Moves a point in towards the middle of the pond, for the rounded pond (see ROUND_PULL). */
+function pullIn(p: Point, W: number, H: number): Point {
+  return { x: W / 2 + (p.x - W / 2) * ROUND_PULL, y: H / 2 + (p.y - H / 2) * ROUND_PULL };
+}
+
 /** Two lotus beds, a few anchored flowers, and smaller pads and leaves round the edges. */
 function makePads(W: number, H: number, rand: () => number): Pad[] {
   const pads: Pad[] = [];
   // glow scales the bed's brightness; the lower-left bed sits quieter so it doesn't pull the eye.
   for (const bed of [{ x: 0.78, y: 0.36, n: 3, glow: 1 }, { x: 0.16, y: 0.74, n: 2, glow: 0.6 }]) {
     for (let i = 0; i < bed.n; i++) {
-      const r = H * (0.075 + rand() * 0.04);
+      const r = H * POND_SCALE * (0.075 + rand() * 0.04);
       pads.push({
         x: bed.x * W + (rand() - 0.5) * H * 0.34,
         y: bed.y * H + (rand() - 0.5) * H * 0.26,
@@ -389,8 +438,8 @@ function makePads(W: number, H: number, rand: () => number): Pad[] {
   // The leftmost pad of the upper-right bed moves down beside it, so the lower left has a pair.
   let left = 0;
   for (let k = 1; k < 3; k++) if (pads[k].x < pads[left].x) left = k;
-  pads[left].x = flowering.x + H * 0.17;
-  pads[left].y = flowering.y - H * 0.04;
+  pads[left].x = flowering.x + H * POND_SCALE * 0.17;
+  pads[left].y = flowering.y - H * POND_SCALE * 0.04;
   // The two left in the upper-right bed sit in the top-right corner and overlap: the plain pad
   // tucks in just below the flowering one, which is drawn on top.
   const rest = [0, 1, 2].filter((k) => k !== left).map((k) => pads[k]);
@@ -400,21 +449,21 @@ function makePads(W: number, H: number, rand: () => number): Pad[] {
   top.x = 0.8 * W;
   top.y = 0.25 * H;
   if (under) {
-    under.x = top.x + H * 0.04;
-    under.y = top.y + H * 0.11;
+    under.x = top.x + H * POND_SCALE * 0.04;
+    under.y = top.y + H * POND_SCALE * 0.11;
   }
   // Three anchored flowers in the top left, no pads, fading out with the screen's edge.
   // Their own random stream, so the beds above don't move.
   const frand = mulberry32(11);
   for (const [ox, oy, size] of [[0, 0, 1], [0.09, 0.07, 0.8], [-0.055, 0.11, 0.7]]) {
     pads.push({
-      x: 0.13 * W + ox * H,
-      y: 0.18 * H + oy * H,
+      x: 0.13 * W + ox * H * POND_SCALE,
+      y: 0.18 * H + oy * H * POND_SCALE,
       vx: 0,
       vy: 0,
       angle: frand() * Math.PI * 2,
       spin: 0,
-      r: H * 0.085 * size,
+      r: H * POND_SCALE * 0.085 * size,
       lum: 0.46 + frand() * 0.06,
       flower: true,
       glow: 0.72, // a step below the koi, so the fish stay the brightest thing in the pond
@@ -436,7 +485,7 @@ function makePads(W: number, H: number, rand: () => number): Pad[] {
       vy: 0,
       angle: drand() * Math.PI * 2,
       spin: kind === "flower" ? 0 : (drand() - 0.5) * 0.001,
-      r: r * H,
+      r: r * H * POND_SCALE,
       lum: (kind === "leaf" ? 0.5 + drand() * 0.1 : 0.46 + drand() * 0.08) * (soft ? 0.75 : 1),
       flower: kind === "flower",
       glow: 0.62 * (soft ? 0.75 : 1),
@@ -467,7 +516,7 @@ function makePads(W: number, H: number, rand: () => number): Pad[] {
     vy: 0,
     angle: drand() * Math.PI * 2,
     spin: 0.0008,
-    r: 0.05 * H,
+    r: 0.05 * H * POND_SCALE,
     lum: 0.5,
     flower: true,
     glow: 0.72,
@@ -564,7 +613,7 @@ function buildSprites(S: number, { palette, background }: Scheme) {
 }
 
 function makeFish(W: number, H: number, rand: () => number, variety: Variety): Fish {
-  const length = H * (0.37 + rand() * 0.065);
+  const length = H * POND_SCALE * (0.37 + rand() * 0.065);
   const heading = rand() * Math.PI * 2;
   const x = W * (0.2 + rand() * 0.6);
   const y = H * (0.3 + rand() * 0.4);
@@ -904,7 +953,7 @@ export default function Pond() {
       floor = buildFloor(W, H);
       // Rocks never move, so they're drawn once per resize.
       rctx.clearRect(0, 0, W, H);
-      drawRocks(rctx, buildRocks(W, H));
+      drawRocks(rctx, buildRocks(W, H).map((k) => (POND_ROUND ? { ...k, ...pullIn(k, W, H) } : k)));
       rockPx = rctx.getImageData(0, 0, W, H).data;
       image = bctx.createImageData(W, H);
       lastSprite = -Infinity;
@@ -914,14 +963,20 @@ export default function Pond() {
       vignette = new Float32Array(W * H);
       for (let y = 0; y < H; y++) {
         for (let x = 0; x < W; x++) {
-          const ex = Math.min(1, Math.min(x, W - 1 - x) / (W * 0.22));
-          const ey = Math.min(1, Math.min(y, H - 1 - y) / (H * 0.27));
-          const e = ex * ey;
+          let e: number;
+          if (POND_ROUND) {
+            // Full inside, dissolving over a band just inside the outline.
+            e = Math.max(0, Math.min(1, -pondEdge(x + 0.5, y + 0.5, W, H).d / (POND_FADE * H)));
+          } else {
+            const ex = Math.min(1, Math.min(x, W - 1 - x) / (W * 0.22));
+            const ey = Math.min(1, Math.min(y, H - 1 - y) / (H * 0.27));
+            e = ex * ey;
+          }
           vignette[y * W + x] = e * e * (3 - 2 * e);
         }
       }
 
-      cell = Math.max(20 * K, Math.round(H / 4.2)); // smaller cells: a finer honeycomb of light
+      cell = Math.max(20 * K, Math.round((H * POND_SCALE) / 4.2)); // smaller cells: a finer honeycomb of light
       gw = Math.ceil(W / cell) + 2;
       gh = Math.ceil(H / cell) + 2;
       cpx = new Float32Array(gw * gh);
@@ -937,7 +992,10 @@ export default function Pond() {
       for (let k = fish.length; k < count; k++) fish.push(makeFish(W, H, rand, k === 0 ? "showa" : "ogon"));
       if (leaves.length === 0) leaves = makeLeaves(W, H, rand);
       else for (const l of leaves) { l.x *= sx; l.y *= sy; }
-      if (pads.length === 0) pads = makePads(W, H, rand);
+      if (pads.length === 0) {
+        pads = makePads(W, H, rand);
+        if (POND_ROUND) for (const p of pads) Object.assign(p, pullIn(p, W, H));
+      }
       else for (const p of pads) { p.x *= sx; p.y *= sy; }
     };
 
@@ -1058,6 +1116,23 @@ export default function Pond() {
 
     // Keep a whole fish inside the pond by sliding it, never by moving its head alone (that pivots the body).
     const shiftInside = (f: Fish) => {
+      if (POND_ROUND) {
+        // Nudge the whole fish back in by its furthest-out point, so none of it reaches the rim.
+        const margin = 0.12 * H;
+        let over = 0;
+        let ux = 0;
+        let uy = 0;
+        for (const q of f.spine) {
+          const e = pondEdge(q.x, q.y, W, H);
+          if (e.d + margin > over) {
+            over = e.d + margin;
+            ux = e.nx;
+            uy = e.ny;
+          }
+        }
+        if (over > 0) translateFish(f, -ux * over, -uy * over);
+        return;
+      }
       let dx = 0;
       let dy = 0;
       for (const q of f.spine) {
@@ -1174,9 +1249,25 @@ export default function Pond() {
           f.target = null;
         }
         if (chase === Infinity && (simTime > f.goalUntil || Math.hypot(f.goal.x - head.x, f.goal.y - head.y) < f.length * 0.3)) {
-          // Goals sit towards the far side, so the fish make long runs along the wide pond.
-          const side = head.x < W / 2 ? 1 : -1;
-          f.goal = { x: W / 2 + side * W * (0.12 + rand() * 0.18), y: H * (0.36 + rand() * 0.28) };
+          if (POND_ROUND) {
+            // Somewhere well inside the water, across the pond from where it is now, so it makes
+            // long sweeps round it.
+            const a = Math.atan2(head.y - H / 2, head.x - W / 2) + Math.PI + (rand() - 0.5) * 1.6;
+            let goal = { x: W / 2, y: H / 2 };
+            for (let tries = 0; tries < 12; tries++) {
+              const r = 0.15 + rand() * 0.85;
+              const g = { x: W / 2 + Math.cos(a) * r * W * 0.4, y: H / 2 + Math.sin(a) * r * H * 0.4 };
+              if (pondEdge(g.x, g.y, W, H).d < -0.24 * H) {
+                goal = g;
+                break;
+              }
+            }
+            f.goal = goal;
+          } else {
+            // Goals sit towards the far side, so the fish make long runs along the wide pond.
+            const side = head.x < W / 2 ? 1 : -1;
+            f.goal = { x: W / 2 + side * W * (0.12 + rand() * 0.18), y: H * (0.36 + rand() * 0.28) };
+          }
           f.goalUntil = simTime + 4 + rand() * 5;
         }
         let bx = f.goal.x - head.x;
@@ -1194,7 +1285,9 @@ export default function Pond() {
         const ly = head.y + Math.sin(f.heading) * ahead;
         const mx = W * 0.16;
         const my = H * 0.2;
-        const out = Math.max(mx - lx, lx - (W - mx), my - ly, ly - (H - my), 0);
+        const out = POND_ROUND
+          ? Math.max(0, pondEdge(lx, ly, W, H).d + 0.25 * H)
+          : Math.max(mx - lx, lx - (W - mx), my - ly, ly - (H - my), 0);
         if (out > 0) {
           const cx = W / 2 - head.x;
           const cy = H / 2 - head.y;
@@ -1381,8 +1474,8 @@ export default function Pond() {
       const lineWidth = cell * 0.075;
       const warp = cell * 0.22;
       const warpFreq = (Math.PI * 2) / (cell * 1.6);
-      const shadowX = Math.max(2, Math.round(H * 0.04));
-      const shadowY = Math.max(2, Math.round(H * 0.05));
+      const shadowX = Math.max(2, Math.round(H * POND_SCALE * 0.04));
+      const shadowY = Math.max(2, Math.round(H * POND_SCALE * 0.05));
       const glintTick = Math.floor(t * 6); // glints re-roll six times a second
 
       for (let y = 0; y < H; y++) {
@@ -1571,9 +1664,20 @@ export default function Pond() {
 
       disturb(p.x, p.y, 3 * K, -5);
       // Drop food here: the fish turn and come straight over to feed.
+      // Food lands in the water the fish can reach, never out in the faded rim.
+      let fx = Math.max(W * 0.14, Math.min(W * 0.86, p.x));
+      let fy = Math.max(H * 0.18, Math.min(H * 0.82, p.y));
+      if (POND_ROUND) {
+        // Slide it in towards the middle until it's comfortably inside the water.
+        let k = 1;
+        while (k > 0 && pondEdge(W / 2 + (p.x - W / 2) * k, H / 2 + (p.y - H / 2) * k, W, H).d > -0.22 * H) k -= 0.05;
+        k = Math.max(0, k);
+        fx = W / 2 + (p.x - W / 2) * k;
+        fy = H / 2 + (p.y - H / 2) * k;
+      }
       feed = {
-        x: Math.max(W * 0.14, Math.min(W * 0.86, p.x)),
-        y: Math.max(H * 0.18, Math.min(H * 0.82, p.y)),
+        x: fx,
+        y: fy,
         until: simTime + 10,
         nibbleAt: 0,
       };
@@ -1710,7 +1814,11 @@ export default function Pond() {
   const layer = "absolute left-0 top-0";
 
   return (
-    <div ref={wrapRef} className="pond relative overflow-hidden">
+    <div
+      ref={wrapRef}
+      className={`pond relative overflow-hidden${POND_ROUND ? " pond-round" : ""}`}
+      style={POND_ROUND ? { aspectRatio: POND_ASPECT } : undefined}
+    >
       <canvas
         ref={canvasRef}
         role="img"

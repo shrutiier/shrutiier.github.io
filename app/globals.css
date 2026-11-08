@@ -200,6 +200,12 @@ body {
   }
 }
 
+/* The rounded pond: the same width as the original wide pond (running past the text column
+   into the bleed, so its faded rim reaches the content's edges), its shape set in Pond. */
+.pond.pond-round {
+  width: 100%;
+}
+
 .pond-bloom {
   image-rendering: pixelated;
   filter: blur(8px);
