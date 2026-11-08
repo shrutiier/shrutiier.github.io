@@ -1,3 +1,4 @@
+import AlphaVideo from "@/components/AlphaVideo";
 import BackLink from "@/components/BackLink";
 import Footer from "@/components/Footer";
 import RevealOnScroll from "@/components/RevealOnScroll";
@@ -7,13 +8,8 @@ function Motion({ name, label, width, height }: { name: string; label: string; w
   return (
     <section className="mt-6 w-full flex justify-center reveal" data-reveal>
       <div className="page-bleed overflow-hidden rounded-none sm:rounded-[12px]">
-        <video
-          src={getImagePath(`/projects/tymli-health/tymli-${name}.mp4?v=2`)}
-          poster={getImagePath(`/projects/tymli-health/tymli-${name}.jpg?v=2`)}
-          autoPlay
-          loop
-          muted
-          playsInline
+        <AlphaVideo
+          base={getImagePath(`/projects/tymli-health/tymli-${name}`)}
           aria-label={label}
           width={width}
           height={height}

@@ -1,3 +1,4 @@
+import AlphaVideo from "@/components/AlphaVideo";
 import BackLink from "@/components/BackLink";
 import Footer from "@/components/Footer";
 import RevealOnScroll from "@/components/RevealOnScroll";
@@ -42,13 +43,8 @@ export default function ProjectPage()  {
         {/* Hero Animation */}
         <section className="mt-6 w-full flex justify-center reveal" data-reveal>
           <div className="page-bleed overflow-hidden rounded-none sm:rounded-[12px]">
-            <video
-              src={getImagePath("/projects/nicmar/nicmar-hero.mp4")}
-              poster={getImagePath("/projects/nicmar/nicmar-hero.jpg")}
-              autoPlay
-              loop
-              muted
-              playsInline
+            <AlphaVideo
+              base={getImagePath("/projects/nicmar/nicmar-hero")}
               aria-label="NICMAR Online homepage hero"
               width={1920}
               height={1294}
@@ -73,13 +69,8 @@ export default function ProjectPage()  {
         {/* Secondary Image */}
         <section className="mt-6 w-full flex justify-center reveal" data-reveal>
           <div className="page-bleed overflow-hidden rounded-none sm:rounded-[12px]">
-            <video
-              src={getImagePath("/projects/nicmar/nicmar-accessibility.mp4")}
-              poster={getImagePath("/projects/nicmar/nicmar-accessibility.jpg")}
-              autoPlay
-              loop
-              muted
-              playsInline
+            <AlphaVideo
+              base={getImagePath("/projects/nicmar/nicmar-accessibility")}
               aria-label="Accessibility Overview"
               width={1920}
               height={924}
