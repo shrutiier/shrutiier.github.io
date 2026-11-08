@@ -90,6 +90,8 @@ body {
     transform: translateY(18px);
     transition: opacity 700ms cubic-bezier(0.22, 1, 0.36, 1),
                 transform 700ms cubic-bezier(0.22, 1, 0.36, 1);
+    /* Set --reveal-delay to stagger items that come into view together, like the work list. */
+    transition-delay: var(--reveal-delay, 0ms);
     will-change: opacity, transform;
   }
 

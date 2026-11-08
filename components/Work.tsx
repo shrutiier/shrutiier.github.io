@@ -1,4 +1,8 @@
 import Link from "next/link";
+import type { CSSProperties } from "react";
+
+// Gap between one project appearing and the next.
+const STAGGER_MS = 120;
 
 export default function Work() {
   const projects = [
@@ -40,7 +44,10 @@ export default function Work() {
           <Link
             key={index}
             href={project.href}
-            className="group flex items-center justify-between cursor-pointer"
+            className="group flex items-center justify-between cursor-pointer reveal"
+            data-reveal
+            // Rows that scroll into view together come in one by one, top to bottom.
+            style={{ "--reveal-delay": `${index * STAGGER_MS}ms` } as CSSProperties}
           >
             {/* Title with its description beneath on the left, year pushed to the far right of the row. */}
             <div className="flex w-full items-baseline justify-between gap-x-4 py-[14px] cursor-pointer">

@@ -37,8 +37,8 @@ export default function Home() {
             </p>
           </section>
 
-          {/* Work */}
-          <section className="reveal" data-reveal>
+          {/* Work — each project fades up on its own, one after another (see Work) */}
+          <section>
             <Work />
             {/* <Art /> — artworks hidden for now */}
           </section>

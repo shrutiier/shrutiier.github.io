@@ -64,8 +64,7 @@ const SCHEMES: Record<"dark" | "light", { stops: [number, RGB][]; background: RG
 type Scheme = { palette: RGB[]; background: RGB; light: boolean };
 
 /**
- * Koi colours, used in the light scheme only. The dark pond stays one green so the koi read as
- * glowing light; on paper they get their real colours. Each variety is a short ladder, darkest
+ * Koi colours, in both schemes (the dark pond uses a dimmer set, see KOI_DARK). Each variety is a short ladder, darkest
  * (the shaded flank) to lightest (the sunlit back), and these are appended to the palette after
  * the LEVELS water tones: a cell's level is LEVELS + KOI_STEPS * kind + step.
  */
@@ -76,8 +75,17 @@ const KOI: RGB[][] = [
   [[6, 6, 8], [14, 14, 18], [24, 24, 30], [36, 36, 44], [52, 52, 62], [74, 74, 86]], // showa: sumi, lacquer black
   [[176, 60, 0], [222, 96, 0], [252, 132, 0], [255, 164, 0], [255, 190, 12], [255, 216, 64]], // golden ogon: saturated orange-gold
 ];
+// The same koi seen at night: a little dimmer, so they glow in the dark pond rather than glare,
+// and the sumi lifted to a deep blue-grey, since true black would vanish into the dark water.
+const KOI_DARK: RGB[][] = [
+  KOI[0].map((c) => c.map((v) => Math.round(v * 0.86)) as RGB),
+  KOI[1].map((c) => c.map((v) => Math.round(v * 0.9)) as RGB),
+  [[22, 24, 32], [32, 35, 46], [44, 48, 62], [58, 63, 80], [76, 82, 100], [98, 105, 124]],
+  KOI[3].map((c) => c.map((v) => Math.round(v * 0.9)) as RGB),
+];
+
 // Which koi colour a fish pixel is, carried in the blue channel of the fish canvas (whose red
-// channel is brightness). The dark pond reads only red, so this costs it nothing. Tags are 60
+// channel is brightness). Tags are 60
 // apart so a blended edge still rounds to the right colour.
 const KOI_WHITE = 40, KOI_RED = 100, KOI_SUMI = 160, KOI_GOLD = 220;
 const koiKindOf = (tag: number) => Math.max(0, Math.min(3, Math.round((tag - KOI_WHITE) / 60)));
@@ -102,7 +110,7 @@ function makeScheme(theme: "dark" | "light"): Scheme {
     return ca.map((c, i) => Math.round(c + (cb[i] - c) * t)) as RGB;
   });
   const light = theme === "light";
-  return { palette: light ? [...palette, ...KOI.flat()] : palette, background, light };
+  return { palette: [...palette, ...(light ? KOI : KOI_DARK).flat()], background, light };
 }
 
 /** The theme the page is showing, from the class ThemeProvider puts on <html>. */
@@ -1451,7 +1459,7 @@ export default function Pond() {
             // On paper a bright fish means dark ink, so the see-through fringe is kept pale there.
             const edgeInk = scheme.light && fa <= 140 ? 0.5 : 1;
             L += ((fishPx[qi] / 255) * (0.92 + caustic * 0.18) * edgeInk - L) * cover;
-            if (scheme.light && fa > 140) {
+            if (fa > 140) {
               const tag = fishPx[qi + 2];
               koiKind = koiKindOf(tag);
               // Shade each koi as a rounded body lit from the top left (the same light as the ripple
@@ -1501,7 +1509,7 @@ export default function Pond() {
           const n = BAYER[(y & 3) * 4 + (x & 3)];
           let k = on <= n ? 0 : Math.max(0, Math.min(last, Math.floor(L * last + n)));
           if (k > 0 && koiKind >= 0 && koiEdge * 0.85 > n) {
-            k = Math.max(1, Math.min(last, Math.floor(L * 0.45 * last + n)));
+            k = Math.max(1, Math.min(last, Math.floor(L * (scheme.light ? 0.45 : 0.75) * last + n)));
           } else if (k > 0 && koiKind >= 0) {
             // Gentler dither than the water, so the shading reads as form rather than speckle.
             const step = Math.max(0, Math.min(KOI_STEPS - 1, Math.floor(koiT * (KOI_STEPS - 1) + 0.5 + (n - 0.5) * 0.5)));
