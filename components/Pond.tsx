@@ -28,26 +28,63 @@ const K = 4 / CELL;
 // 4×4 Bayer matrix: ordered dithering, as on early monochrome displays.
 const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5].map((v) => (v + 0.5) / 16);
 
-// Brightness to colour, built around the site accent (--accent #6EA91A, --accent-deep #335404).
-const STOPS: [number, [number, number, number]][] = [
-  [0, [5, 9, 3]],
-  [0.25, [20, 36, 6]],
-  [0.5, [51, 84, 4]],
-  [0.75, [110, 169, 26]],
-  [1, [196, 238, 128]],
-];
+type RGB = [number, number, number];
 
-const BACKGROUND: [number, number, number] = [9, 9, 9]; // the page background, so switched-off dots vanish into it
+/**
+ * Brightness to colour, one scheme per site theme.
+ * Dark: a phosphor screen built around the site accent (--accent #6EA91A, --accent-deep #335404),
+ * glowing brighter where the scene is lit.
+ * Light: the same picture printed in green ink on the page's paper, so it runs the other way —
+ * shadowed water is pale and the lit koi and pads take the deepest ink.
+ * The background is the page colour, so switched-off dots vanish into it.
+ */
+const SCHEMES: Record<"dark" | "light", { stops: [number, RGB][]; background: RGB }> = {
+  dark: {
+    stops: [
+      [0, [5, 9, 3]],
+      [0.25, [20, 36, 6]],
+      [0.5, [51, 84, 4]],
+      [0.75, [110, 169, 26]],
+      [1, [196, 238, 128]],
+    ],
+    background: [9, 9, 9],
+  },
+  light: {
+    stops: [
+      [0, [229, 233, 212]],
+      [0.25, [196, 218, 158]],
+      [0.5, [134, 182, 70]],
+      [0.75, [71, 138, 0]], // the light-mode accent, #478A00
+      [1, [34, 70, 0]],
+    ],
+    background: [244, 243, 238],
+  },
+};
 
-const PALETTE = Array.from({ length: LEVELS }, (_, k) => {
-  const v = k / (LEVELS - 1);
-  let j = 0;
-  while (j < STOPS.length - 2 && v > STOPS[j + 1][0]) j++;
-  const [a, ca] = STOPS[j];
-  const [b, cb] = STOPS[j + 1];
-  const t = (v - a) / (b - a);
-  return ca.map((c, i) => Math.round(c + (cb[i] - c) * t)) as [number, number, number];
-});
+type Scheme = { palette: RGB[]; background: RGB; light: boolean };
+
+// In the light scheme, shadows pull the water towards this brightness instead of darkening it.
+// Darkening would mean less ink, and the shadows would print as pale, almost white, patches.
+const SHADOW_INK = 0.5;
+
+function makeScheme(theme: "dark" | "light"): Scheme {
+  const { stops, background } = SCHEMES[theme];
+  const palette = Array.from({ length: LEVELS }, (_, k) => {
+    const v = k / (LEVELS - 1);
+    let j = 0;
+    while (j < stops.length - 2 && v > stops[j + 1][0]) j++;
+    const [a, ca] = stops[j];
+    const [b, cb] = stops[j + 1];
+    const t = (v - a) / (b - a);
+    return ca.map((c, i) => Math.round(c + (cb[i] - c) * t)) as RGB;
+  });
+  return { palette, background, light: theme === "light" };
+}
+
+/** The theme the page is showing, from the class ThemeProvider puts on <html>. */
+function pageTheme(): "dark" | "light" {
+  return document.documentElement.classList.contains("light") ? "light" : "dark";
+}
 
 type Point = { x: number; y: number };
 
@@ -457,11 +494,11 @@ function drawPadDisc(ctx: CanvasRenderingContext2D, p: Pad, x: number, y: number
  * like the cells of an old monochrome screen. Brightness shows only as colour.
  * Level 0 is a switched-off cell: plain page background.
  */
-function buildSprites(S: number) {
-  return PALETTE.map((col, k) => {
+function buildSprites(S: number, { palette, background }: Scheme) {
+  return palette.map((col, k) => {
     const sprite = new Uint32Array(S * S);
-    if (k === 0) return sprite.fill(((255 << 24) | (BACKGROUND[2] << 16) | (BACKGROUND[1] << 8) | BACKGROUND[0]) >>> 0);
-    const gapCol = col.map((c, i) => BACKGROUND[i] + (c - BACKGROUND[i]) * 0.12);
+    if (k === 0) return sprite.fill(((255 << 24) | (background[2] << 16) | (background[1] << 8) | background[0]) >>> 0);
+    const gapCol = col.map((c, i) => background[i] + (c - background[i]) * 0.12);
     const half = S * 0.4;
     const SS = 4;
     for (let py = 0; py < S; py++) {
@@ -697,6 +734,7 @@ export default function Pond() {
     let levels = new Uint8Array(0);
     let S = 3; // device pixels per cell
     let sprites: Uint32Array[] = [];
+    let scheme = makeScheme(pageTheme());
     let fish: Fish[] = [];
     let fishPx = new Uint8ClampedArray(0);
     let rockPx = new Uint8ClampedArray(0);
@@ -738,7 +776,7 @@ export default function Pond() {
       screen = ctx.createImageData(W * S, H * S);
       screen32 = new Uint32Array(screen.data.buffer);
       levels = new Uint8Array(W * H);
-      sprites = buildSprites(S);
+      sprites = buildSprites(S, scheme);
       cur = new Float32Array(W * H);
       prev = new Float32Array(W * H);
       floor = buildFloor(W, H);
@@ -1214,17 +1252,19 @@ export default function Pond() {
 
           let L = floor[si] + caustic * 0.11;
 
-          // Shadows on the floor, cast down and to the right.
+          // Shadows on the floor, cast down and to the right. `shade` is how much light gets through.
+          let shade = 1;
           const shx = sx - shadowX;
           const shy = sy - shadowY;
           if (shx >= 0 && shy >= 0) {
             const k = (shy * W + shx) * 4;
-            L *= 1 - (fishPx[k + 3] / 255) * 0.62;
-            L *= 1 - (rockPx[k + 3] / 255) * 0.21;
+            shade *= 1 - (fishPx[k + 3] / 255) * 0.62;
+            shade *= 1 - (rockPx[k + 3] / 255) * 0.21;
           }
           const lsx = x - shadowX;
           const lsy = y - shadowY;
-          if (lsx >= 0 && lsy >= 0 && leafPx[(lsy * W + lsx) * 4 + 3] > 128) L *= 0.55;
+          if (lsx >= 0 && lsy >= 0 && leafPx[(lsy * W + lsx) * 4 + 3] > 128) shade *= 0.55;
+          if (shade < 1) L = scheme.light ? L + (SHADOW_INK - L) * (1 - shade) : L * shade;
 
           const ra = rockPx[si * 4 + 3] / 255;
           if (ra > 0.3) L += ((rockPx[si * 4] / 255) * (0.8 + caustic * 0.5) - L) * Math.min(1, ra * 1.4);
@@ -1254,12 +1294,14 @@ export default function Pond() {
           const n = BAYER[(y & 3) * 4 + (x & 3)];
           const k = on <= n ? 0 : Math.max(0, Math.min(last, Math.floor(L * last + n)));
           levels[i] = k;
-          const col = PALETTE[k];
+          const col = scheme.palette[k];
           const o = i * 4;
           out[o] = col[0];
           out[o + 1] = col[1];
           out[o + 2] = col[2];
-          out[o + 3] = 255;
+          // Off cells are left clear in the bloom. Any colour there, even the page's own,
+          // blends with the page and shows the glow layer's edge as a faint box.
+          out[o + 3] = k === 0 ? 0 : 255;
         }
       }
       bctx.putImageData(image, 0, 0);
@@ -1418,6 +1460,13 @@ export default function Pond() {
       if (visible) start(); else stop();
     });
     io.observe(wrap);
+    // Repaint in the other palette when the site theme is switched.
+    const themeWatch = new MutationObserver(() => {
+      scheme = makeScheme(pageTheme());
+      sprites = buildSprites(S, scheme);
+      render(performance.now());
+    });
+    themeWatch.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
     const onVisibility = () => (document.hidden ? stop() : start());
     document.addEventListener("visibilitychange", onVisibility);
     start();
@@ -1426,6 +1475,7 @@ export default function Pond() {
       stop();
       ro.disconnect();
       io.disconnect();
+      themeWatch.disconnect();
       document.removeEventListener("visibilitychange", onVisibility);
       canvas.removeEventListener("pointerdown", onDown);
       canvas.removeEventListener("pointermove", onMove);

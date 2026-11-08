@@ -1,4 +1,5 @@
 import Link from "next/link";
+import ThemeToggle from "./ThemeToggle";
 import LastPlayed from "./LastPlayed";
 import VisitorCount from "./VisitorCount";
 
@@ -26,7 +27,7 @@ export default function Footer({ showStatus = false }: { showStatus?: boolean })
         </div>
 
         {/* Right side: social links */}
-        <div className="order-1 flex space-x-3 font-mono text-[12px] uppercase md:order-2 md:-mr-1.5">
+        <div className="order-1 flex items-center space-x-3 font-mono text-[12px] uppercase md:order-2 md:-mr-1.5">
           <Link
             href="https://www.linkedin.com/in/shrutiiyer17/"
             target="_blank"
@@ -51,6 +52,7 @@ export default function Footer({ showStatus = false }: { showStatus?: boolean })
             Behance
           </Link>
           */}
+          <ThemeToggle />
         </div>
       </div>
     </footer>

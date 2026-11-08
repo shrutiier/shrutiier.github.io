@@ -1,69 +1,63 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState } from "react";
 
-type Theme = 'light' | 'dark';
+export type Theme = "light" | "dark";
 
 interface ThemeContextType {
   theme: Theme;
   toggleTheme: () => void;
 }
 
+const STORAGE_KEY = "theme";
+
+/**
+ * Runs inline in <head>, before the page paints, so a visitor who picked light mode
+ * never sees a flash of the dark page first. Dark is the default; only an explicit
+ * choice saved by the footer toggle switches it.
+ */
+export const themeScript = `(function(){try{var t=localStorage.getItem("${STORAGE_KEY}");if(t!=="light")t="dark";var r=document.documentElement;r.classList.remove("light","dark");r.classList.add(t);}catch(e){document.documentElement.classList.add("dark");}})();`;
+
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<Theme>('light');
-  const [mounted, setMounted] = useState(false);
+  // The inline script has already set the class by the time this runs; start dark to
+  // match the server render, then pick up whatever the script chose.
+  const [theme, setTheme] = useState<Theme>("dark");
 
   useEffect(() => {
-    setMounted(true);
-    // Apply theme immediately to prevent flash
-    const applyTheme = (theme: Theme) => {
-      const root = document.documentElement;
-      root.classList.remove('light', 'dark');
-      root.classList.add(theme);
-    };
-
-    const savedTheme = localStorage.getItem('theme') as Theme;
-    if (savedTheme && ['light', 'dark'].includes(savedTheme)) {
-      setTheme(savedTheme);
-      applyTheme(savedTheme);
-    } else {
-      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-      setTheme(systemTheme);
-      applyTheme(systemTheme);
-    }
+    setTheme(document.documentElement.classList.contains("light") ? "light" : "dark");
   }, []);
 
-  useEffect(() => {
-    if (mounted) {
-      const root = document.documentElement;
-      root.classList.remove('light', 'dark');
-      root.classList.add(theme);
-      localStorage.setItem('theme', theme);
-    }
-  }, [theme, mounted]);
-
   const toggleTheme = () => {
-    setTheme(prev => prev === 'light' ? 'dark' : 'light');
+    const root = document.documentElement;
+    const next: Theme = root.classList.contains("light") ? "dark" : "light";
+
+    const swap = () => {
+      root.classList.remove("light", "dark");
+      root.classList.add(next);
+      try {
+        localStorage.setItem(STORAGE_KEY, next);
+      } catch {
+        // Private mode or blocked storage: the switch still works for this visit.
+      }
+      setTheme(next);
+    };
+
+    // Crossfade where the browser supports view transitions; switch instantly otherwise,
+    // and for anyone who has asked for reduced motion.
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduced || typeof document.startViewTransition !== "function") swap();
+    else document.startViewTransition(swap);
   };
 
-  // Prevent hydration mismatch by not rendering until mounted
-  if (!mounted) {
-    return <>{children}</>;
-  }
-
-  return (
-    <ThemeContext.Provider value={{ theme, toggleTheme }}>
-      {children}
-    </ThemeContext.Provider>
-  );
+  return <ThemeContext.Provider value={{ theme, toggleTheme }}>{children}</ThemeContext.Provider>;
 }
 
 export function useTheme() {
   const context = useContext(ThemeContext);
   if (context === undefined) {
-    throw new Error('useTheme must be used within a ThemeProvider');
+    throw new Error("useTheme must be used within a ThemeProvider");
   }
   return context;
 }

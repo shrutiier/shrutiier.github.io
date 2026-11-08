@@ -1,7 +1,10 @@
 import BackLink from "@/components/BackLink";
 import Footer from "@/components/Footer";
 import RevealOnScroll from "@/components/RevealOnScroll";
+import ThemedVideo from "@/components/ThemedVideo";
 import { getImagePath } from "@/utils/getImagePath";
+
+const asset = (name: string) => getImagePath(`/projects/siemens-energy-design-system/${name}`);
 
 export default function ProjectPage() {
   return (
@@ -31,8 +34,11 @@ export default function ProjectPage() {
 
         <section className="mt-6 w-full flex justify-center reveal" data-reveal>
           <div className="page-bleed overflow-hidden rounded-none sm:rounded-[12px]">
-            <video
-              src={getImagePath("/projects/siemens-energy-design-system/hero.mp4")}
+            <ThemedVideo
+              dark={{ src: asset("hero.mp4") }}
+              // Exported by hand from "Frame - Hero — Light" in Figma; until the file is in
+              // place, ThemedVideo falls back to the dark hero.
+              light={{ src: asset("hero-light.mp4") }}
               autoPlay
               loop
               muted
@@ -105,9 +111,9 @@ export default function ProjectPage() {
 
         <section className="mt-6 w-full flex justify-center reveal" data-reveal>
           <div className="page-bleed overflow-hidden rounded-none sm:rounded-[12px]">
-            <video
-              src={getImagePath("/projects/siemens-energy-design-system/foundation.mp4")}
-              poster={getImagePath("/projects/siemens-energy-design-system/foundation.jpg")}
+            <ThemedVideo
+              dark={{ src: asset("foundation.mp4"), poster: asset("foundation.jpg") }}
+              light={{ src: asset("foundation-light.mp4"), poster: asset("foundation-light.jpg") }}
               autoPlay
               loop
               muted
@@ -156,96 +162,107 @@ export default function ProjectPage() {
             role="img"
             aria-label="NOEDRA base and energy specific components in use"
           >
-            <video
-              src={getImagePath("/projects/siemens-energy-design-system/components/c1.mp4")}
-              autoPlay
-              loop
-              muted
-              playsInline
-              aria-hidden="true"
-              className="absolute object-cover rounded-[4px]"
-              style={{ left: "11.7188%", top: "1.5000%", width: "16.2598%", height: "35.2000%" }}
-            />
-            <video
-              src={getImagePath("/projects/siemens-energy-design-system/components/c2.mp4")}
-              autoPlay
-              loop
-              muted
-              playsInline
-              aria-hidden="true"
-              className="absolute object-cover rounded-[4px]"
-              style={{ left: "10.2539%", top: "11.8000%", width: "6.6895%", height: "6.0000%" }}
-            />
-            <video
-              src={getImagePath("/projects/siemens-energy-design-system/components/c3.mp4")}
-              autoPlay
-              loop
-              muted
-              playsInline
-              aria-hidden="true"
-              className="absolute object-cover rounded-[4px]"
-              style={{ left: "10.1562%", top: "21.8000%", width: "3.8086%", height: "5.2000%" }}
-            />
-            <video
-              src={getImagePath("/projects/siemens-energy-design-system/components/c4.mp4")}
-              autoPlay
-              loop
-              muted
-              playsInline
-              aria-hidden="true"
-              className="absolute object-cover rounded-[4px]"
-              style={{ left: "10.4492%", top: "41.3000%", width: "8.2520%", height: "6.6000%" }}
-            />
-            <video
-              src={getImagePath("/projects/siemens-energy-design-system/components/c5.mp4")}
-              autoPlay
-              loop
-              muted
-              playsInline
-              aria-hidden="true"
-              className="absolute object-cover rounded-[4px]"
-              style={{ left: "10.2539%", top: "51.0000%", width: "15.4785%", height: "38.4000%" }}
-            />
-            <video
-              src={getImagePath("/projects/siemens-energy-design-system/components/c6.mp4")}
-              autoPlay
-              loop
-              muted
-              playsInline
-              aria-hidden="true"
-              className="absolute object-cover rounded-[4px]"
-              style={{ left: "4.1504%", top: "12.5000%", width: "4.9805%", height: "75.2000%" }}
-            />
-            <video
-              src={getImagePath("/projects/siemens-energy-design-system/components/c7.mp4")}
-              autoPlay
-              loop
-              muted
-              playsInline
-              aria-hidden="true"
-              className="absolute object-cover rounded-[4px]"
-              style={{ left: "27.6367%", top: "51.3000%", width: "34.2773%", height: "37.4000%" }}
-            />
-            <video
-              src={getImagePath("/projects/siemens-energy-design-system/components/c8.mp4")}
-              autoPlay
-              loop
-              muted
-              playsInline
-              aria-hidden="true"
-              className="absolute object-cover rounded-[4px]"
-              style={{ left: "27.7832%", top: "12.5000%", width: "33.9355%", height: "36.4000%" }}
-            />
-            <video
-              src={getImagePath("/projects/siemens-energy-design-system/components/c9.mp4")}
-              autoPlay
-              loop
-              muted
-              playsInline
-              aria-hidden="true"
-              className="absolute object-cover rounded-[4px]"
-              style={{ left: "63.0859%", top: "12.3000%", width: "33.5449%", height: "76.0000%" }}
-            />
+            {/* Each tile is a Figma Motion clip in two themes ("Components — … (light)" and "… (dark)" frames),
+                matching the size, position and loop length of the original screen recordings. */}
+              <ThemedVideo
+                dark={{ src: asset("components/c1-dark.mp4") }}
+                light={{ src: asset("components/c1-light.mp4") }}
+                autoPlay
+                loop
+                muted
+                playsInline
+                aria-hidden="true"
+                className="absolute object-cover rounded-[4px]"
+                style={{ left: "11.7188%", top: "1.5000%", width: "16.2598%", height: "35.2000%" }}
+              />
+              <ThemedVideo
+                dark={{ src: asset("components/c2-dark.mp4") }}
+                light={{ src: asset("components/c2-light.mp4") }}
+                autoPlay
+                loop
+                muted
+                playsInline
+                aria-hidden="true"
+                className="absolute object-cover rounded-[4px]"
+                style={{ left: "10.2539%", top: "11.8000%", width: "6.6895%", height: "6.0000%" }}
+              />
+              <ThemedVideo
+                dark={{ src: asset("components/c3-dark.mp4") }}
+                light={{ src: asset("components/c3-light.mp4") }}
+                autoPlay
+                loop
+                muted
+                playsInline
+                aria-hidden="true"
+                className="absolute object-cover rounded-[4px]"
+                style={{ left: "10.1562%", top: "21.8000%", width: "3.8086%", height: "5.2000%" }}
+              />
+              <ThemedVideo
+                dark={{ src: asset("components/c4-dark.mp4") }}
+                light={{ src: asset("components/c4-light.mp4") }}
+                autoPlay
+                loop
+                muted
+                playsInline
+                aria-hidden="true"
+                className="absolute object-cover rounded-[4px]"
+                style={{ left: "10.4492%", top: "41.3000%", width: "8.2520%", height: "6.6000%" }}
+              />
+              <ThemedVideo
+                dark={{ src: asset("components/c5-dark.mp4") }}
+                light={{ src: asset("components/c5-light.mp4") }}
+                autoPlay
+                loop
+                muted
+                playsInline
+                aria-hidden="true"
+                className="absolute object-cover rounded-[4px]"
+                style={{ left: "10.2539%", top: "51.0000%", width: "15.4785%", height: "38.4000%" }}
+              />
+              <ThemedVideo
+                dark={{ src: asset("components/c6-dark.mp4") }}
+                light={{ src: asset("components/c6-light.mp4") }}
+                autoPlay
+                loop
+                muted
+                playsInline
+                aria-hidden="true"
+                className="absolute object-cover rounded-[4px]"
+                style={{ left: "4.1504%", top: "12.5000%", width: "4.9805%", height: "75.2000%" }}
+              />
+              <ThemedVideo
+                dark={{ src: asset("components/c7-dark.mp4") }}
+                light={{ src: asset("components/c7-light.mp4") }}
+                autoPlay
+                loop
+                muted
+                playsInline
+                aria-hidden="true"
+                className="absolute object-cover rounded-[4px]"
+                style={{ left: "27.6367%", top: "51.3000%", width: "34.2773%", height: "37.4000%" }}
+              />
+              <ThemedVideo
+                dark={{ src: asset("components/c8-dark.mp4") }}
+                light={{ src: asset("components/c8-light.mp4") }}
+                autoPlay
+                loop
+                muted
+                playsInline
+                aria-hidden="true"
+                className="absolute object-cover rounded-[4px]"
+                style={{ left: "27.7832%", top: "12.5000%", width: "33.9355%", height: "36.4000%" }}
+              />
+              <ThemedVideo
+                dark={{ src: asset("components/c9-dark.mp4") }}
+                light={{ src: asset("components/c9-light.mp4") }}
+                autoPlay
+                loop
+                muted
+                playsInline
+                aria-hidden="true"
+                className="absolute object-cover rounded-[4px]"
+                style={{ left: "63.0859%", top: "12.3000%", width: "33.5449%", height: "76.0000%" }}
+              />
           </div>
         </section>
 
@@ -262,9 +279,9 @@ export default function ProjectPage() {
 
         <section className="mt-6 w-full flex justify-center reveal" data-reveal>
           <div className="page-bleed overflow-hidden rounded-none sm:rounded-[12px]">
-            <video
-              src={getImagePath("/projects/siemens-energy-design-system/templates.mp4")}
-              poster={getImagePath("/projects/siemens-energy-design-system/templates.jpg")}
+            <ThemedVideo
+              dark={{ src: asset("templates.mp4"), poster: asset("templates.jpg") }}
+              light={{ src: asset("templates-light.mp4"), poster: asset("templates-light.jpg") }}
               autoPlay
               loop
               muted

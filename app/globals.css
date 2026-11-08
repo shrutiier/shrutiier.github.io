@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* Always dark mode */
+/* Dark is the default theme. */
 :root {
   --background: #090909;
   --muted: #171717;
@@ -16,6 +16,26 @@
   --accent-muted: #6B894A; /* softer green for secondary text: last played, hovered tags */
 }
 
+/* Tell the browser which theme is showing, so the edges it draws itself
+   (overscroll bounce, scrollbar corner, form controls) match instead of flashing white. */
+:root { color-scheme: dark; }
+:root.light { color-scheme: light; }
+
+/* Light theme — warm paper with ink-grey text. Switched on by the footer toggle,
+   which puts .light on <html>. The greens are deepened so they still read on a pale page. */
+:root.light {
+  --background: #F4F3EE;
+  --muted: #E7E5DD;
+  --foreground: #3F3D3A;
+  --muted-foreground: #78756F;
+  --border: #DEDBD2;
+  --scrollbar: #D9D6CC;
+
+  --accent: #478A00;
+  --accent-deep: #9FC46A;
+  --accent-muted: #6A8E45;
+}
+
 /* Tailwind color theme bindings */
 @theme inline {
   --color-background: var(--background);
@@ -29,12 +49,12 @@
 }
 
 html {
+  background: var(--background);
   /* Scrollbar: --scrollbar thumb on the page colour. Chrome, Edge and Firefox
      read this; Safari uses the ::-webkit-scrollbar rules below instead. */
   scrollbar-color: var(--scrollbar) var(--background);
   scroll-behavior: smooth;
   min-height: 100vh;
-  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 ::-webkit-scrollbar {
@@ -60,7 +80,6 @@ body {
   font-family: var(--font-manrope), sans-serif;
   overflow-x: hidden;
   min-height: 100vh;
-  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* Scroll reveal — elements marked [data-reveal] fade up as they enter the viewport.
@@ -156,6 +175,14 @@ body {
 }
 
 
+/* Theme switch — a soft crossfade between the old and new page, run by ThemeContext
+   through the View Transitions API, so everything (the pond included) fades together. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 450ms;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 /* Pond — a green halftone koi pond at the top of the homepage, between the guide lines.
    No frame: its dots thin out towards the edges until they disappear into the page.
    The dots and the fade are drawn by components/Pond.tsx. */
@@ -176,4 +203,10 @@ body {
   filter: blur(8px);
   mix-blend-mode: screen;
   opacity: 0.12;
+}
+
+/* On paper the glow becomes a faint ink bleed instead. */
+:root.light .pond-bloom {
+  mix-blend-mode: multiply;
+  opacity: 0.18;
 }

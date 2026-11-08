@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import NavBar from "../components/NavBar";
 import SmoothScroll from "../components/SmoothScroll";
-import { ThemeProvider } from "../contexts/ThemeContext";
+import { ThemeProvider, themeScript } from "../contexts/ThemeContext";
 import { IBM_Plex_Serif, Manrope } from "next/font/google";
 import { getImagePath } from "@/utils/getImagePath";
 
@@ -37,7 +37,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${ibmPlexSerif.variable} ${manrope.variable}`}>
+    // suppressHydrationWarning: the theme script adds a class to <html> before React hydrates.
+    <html lang="en" className={`${ibmPlexSerif.variable} ${manrope.variable}`} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
       <body>
         <SmoothScroll />
         <ThemeProvider>
