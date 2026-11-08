@@ -28,7 +28,7 @@ const POND_ROUND = true;
 const POND_ASPECT = 1.4;
 const POND_CORNER = 0.4;
 // How far in from the outline the picture starts to dissolve, as a share of the height.
-const POND_FADE = 0.17;
+const POND_FADE = 0.26;
 // The rounded pond reuses the wide pond's layout of pads and rocks, drawn this far in towards
 // the middle so they sit in the water rather than out in the faded rim.
 const ROUND_PULL = POND_ASPECT >= 1.4 ? 0.93 : 0.74;
@@ -1118,7 +1118,7 @@ export default function Pond() {
     const shiftInside = (f: Fish) => {
       if (POND_ROUND) {
         // Nudge the whole fish back in by its furthest-out point, so none of it reaches the rim.
-        const margin = 0.12 * H;
+        const margin = 0.17 * H;
         let over = 0;
         let ux = 0;
         let uy = 0;
@@ -1257,7 +1257,7 @@ export default function Pond() {
             for (let tries = 0; tries < 12; tries++) {
               const r = 0.15 + rand() * 0.85;
               const g = { x: W / 2 + Math.cos(a) * r * W * 0.4, y: H / 2 + Math.sin(a) * r * H * 0.4 };
-              if (pondEdge(g.x, g.y, W, H).d < -0.24 * H) {
+              if (pondEdge(g.x, g.y, W, H).d < -0.3 * H) {
                 goal = g;
                 break;
               }
@@ -1286,7 +1286,7 @@ export default function Pond() {
         const mx = W * 0.16;
         const my = H * 0.2;
         const out = POND_ROUND
-          ? Math.max(0, pondEdge(lx, ly, W, H).d + 0.25 * H)
+          ? Math.max(0, pondEdge(lx, ly, W, H).d + 0.3 * H)
           : Math.max(mx - lx, lx - (W - mx), my - ly, ly - (H - my), 0);
         if (out > 0) {
           const cx = W / 2 - head.x;
@@ -1670,7 +1670,7 @@ export default function Pond() {
       if (POND_ROUND) {
         // Slide it in towards the middle until it's comfortably inside the water.
         let k = 1;
-        while (k > 0 && pondEdge(W / 2 + (p.x - W / 2) * k, H / 2 + (p.y - H / 2) * k, W, H).d > -0.22 * H) k -= 0.05;
+        while (k > 0 && pondEdge(W / 2 + (p.x - W / 2) * k, H / 2 + (p.y - H / 2) * k, W, H).d > -0.28 * H) k -= 0.05;
         k = Math.max(0, k);
         fx = W / 2 + (p.x - W / 2) * k;
         fy = H / 2 + (p.y - H / 2) * k;
